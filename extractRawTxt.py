@@ -6,6 +6,7 @@ Created on Thu Nov  8 12:29:18 2018
 @author: loey
 """
 
+import time
 import sys
 import csv
 import json
@@ -54,6 +55,8 @@ def convertToTrain(writer, fileName, file):
 
 
 def main():
+    if "test" in sys.argv[1]:
+        start_time = time.time()
     mypath = sys.argv[1] + "/" #set path to folder containing files
     files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
     with open('rawtxt/raw_'+sys.argv[1]+'.csv', 'w') as csv_file:
@@ -65,5 +68,7 @@ def main():
             reddit = open(mypath+f, 'r')
             reddit_fulltxt = reddit.readlines()
             reddit_editedtxt = convertToTrain(writer, f, reddit_fulltxt)
-    
+    if "test" in sys.argv[1]:
+        print("Run Time: " + str(time.time()-start_time) + " seconds")
 main()
+
