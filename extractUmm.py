@@ -6,6 +6,7 @@ Created on Wed Oct 24 16:24:40 2018
 @author: Lauren_Oey
 """
 
+import time
 import re
 import sys
 import csv
@@ -14,9 +15,10 @@ import nltk
 from nltk import word_tokenize
 
 authors = dict()
-
+filenames = []
 
 def main():
+    start_time = time.time()
     totalWords = 0
     ummWords = 0
     with open('preExtract/processed_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
@@ -28,6 +30,9 @@ def main():
         meta_file = open('postExtract/metadata_'+sys.argv[1]+'.txt', 'w')
         
         for r in reader:
+            if r['filename'] not in filenames:
+                filenames.append(r['filename'])
+                print(r['filename'])
             if r['sentLength'] != None:
                 totalWords = totalWords + int(r['sentLength'])
                 # checks for word match to umm and checks that sentence contains more than one word
@@ -56,5 +61,6 @@ def main():
         meta_file.write('Total Words in File: ' + str(totalWords) + "\nUmm Words in Files: " + str(ummWords))
         meta_file.close()
         csv_file_w.close()
+    print("Run Time: " + str(time.time()-start_time) + " seconds")
 
 main()

@@ -6,6 +6,7 @@ Created on Thu Nov  1 14:43:40 2018
 @author: loey
 """
 
+import time
 import re
 import sys
 import csv
@@ -18,8 +19,10 @@ tokenizer = RegexpTokenizer(r'\w+')
 pattern_http = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 pattern_www = re.compile('www.(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 pattern_ = re.compile('_*')
+filenames = []
 
 def main():
+    start_time = time.time()
     with open('rawtxt/raw_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
         csv_file_w = open('preprocessed/processed_'+sys.argv[1]+'.csv', 'w')
         reader = csv.DictReader(csv_file_r)
@@ -27,6 +30,9 @@ def main():
         writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
         writer.writeheader()
         for r in reader:
+            if r['filename'] not in filenames:
+                filenames.append(r['filename'])
+                print(r['filename'])
             text = r['text']
             author = r['author']
             if (text not in ["NA", "[deleted]", "[removed]"]) and (author not in ["[deleted]", "autotldr"]) and (re.match("bot$",author) == None) and (langid.classify(text)[0] == "en"): #removes deleted comments
@@ -40,6 +46,7 @@ def main():
                     
                 writer.writerow({'filename': r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'text':cleaned, 'sentLength':len(cleaned_arr), 'timestamp': r['timestamp']})
         csv_file_w.close()
+    print("Run Time: " + str(time.time()-start_time) + " seconds")
 
 main()
     
