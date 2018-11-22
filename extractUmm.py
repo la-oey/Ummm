@@ -15,13 +15,19 @@ import nltk
 from nltk import word_tokenize
 
 authors = dict()
-filenames = []
+ummControl = dict()
+filenames = dict()
 
 def main():
     start_time = time.time()
     totalWords = 0
     ummWords = 0
-    with open('preExtract/processed_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
+    totalSentences = 0
+    ummSentences = 0
+    controlSentences = 0
+    ummWithControlSentences = 0
+
+    with open('preprocessed/processed_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
         csv_file_w = open('postExtract/sample_'+sys.argv[1]+'.csv', 'w')
         reader = csv.DictReader(csv_file_r)
         fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'text', 'sentLength', 'timestamp']
@@ -31,12 +37,14 @@ def main():
         
         for r in reader:
             if r['filename'] not in filenames:
-                filenames.append(r['filename'])
+                filenames[r['filename']] = [r['filename']]
                 print(r['filename'])
             if r['sentLength'] != None:
+                totalSentences = totalSentences + 1
                 totalWords = totalWords + int(r['sentLength'])
                 # checks for word match to umm and checks that sentence contains more than one word
                 if any(re.match("^umm+$", x) for x in r['text'].split()) and int(r['sentLength']) > 1:
+                    ummSentences = ummSentences + 1
                     # checks if comment author exists as an entry in dictionary of authors
                     # if author does not exist, create an entry & sets value to an array containing the length of the sentence
                     if r['author'] not in authors:
@@ -56,11 +64,22 @@ def main():
                 # collects controls
                 # checks among non-umm containing sentences if author entry exists and sentence length is contained within the array
                 elif r['author'] in authors and r['sentLength'] in authors[r['author']]:
+                    controlSentences = controlSentences + 1
+                    authorLength = r['author'] + ',' + r['sentLength']
+                    if authorLength not in ummControl:
+                        ummWithControlSentences = ummWithControlSentences + 1
+                        ummControl[authorLength] = [authorLength]
                     writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp']})
 
-        meta_file.write('Total Words in File: ' + str(totalWords) + "\nUmm Words in Files: " + str(ummWords))
+        meta_file.write('Total Words in File: ' + str(totalWords) + "\n")
+        meta_file.write("Umm Words in Files: " + str(ummWords) + "\n")
+        meta_file.write('Total Sentences in File: ' + str(totalSentences) + "\n")
+        meta_file.write('Umm Sentences in File: ' + str(ummSentences) + "\n")
+        meta_file.write('Control Sentences in File: ' + str(controlSentences) + "\n")
+        meta_file.write('Umm Sentences w/ Control in File: ' + str(ummWithControlSentences))
         meta_file.close()
         csv_file_w.close()
+        csv_file_r.close()
     print("Run Time: " + str(time.time()-start_time) + " seconds")
 
 main()
