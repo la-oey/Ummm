@@ -68,6 +68,8 @@ def main():
             reddit = open(mypath+f, 'r')
             reddit_fulltxt = reddit.readlines()
             reddit_editedtxt = convertToTrain(writer, f, reddit_fulltxt)
+            reddit.close()
+        csv_file.close()
     print("Run Time: " + str(time.time()-start_time) + " seconds")
 main()
 
