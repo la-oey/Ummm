@@ -1,7 +1,7 @@
 #!/bin/bash
-OutFileName="allFiles.csv"                       # Fix the output name
+OutFileName="preprocessed/processed_allFiles.csv"                       # Fix the output name
 i=0                                       # Reset a counter
-for filename in ./*.csv; do 
+for filename in preprocessed/*.csv; do 
  if [ "$filename"  != "$OutFileName" ] ;      # Avoid recursion 
  then 
    if [[ $i -eq 0 ]] ; then 
