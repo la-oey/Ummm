@@ -12,7 +12,7 @@ import sys
 import csv
 csv.field_size_limit(sys.maxsize)
 from nltk.tokenize import RegexpTokenizer
-from html.parser import HTMLParser
+from HTMLParser import HTMLParser
 import langid
 
 tokenizer = RegexpTokenizer(r'\w+')
