@@ -18,16 +18,16 @@ author_testing = dict()
 filenames = dict()
 
 # proportion of data in each set
-p_train = 0.70
-p_validate = 0.10
+p_train = 0.35
+p_validate = 0.45
 p_test = 0.20
 
 def main():
     start_time = time.time()
-    with open('preprocessed/processed_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
-        training_file = open('split/training_'+sys.argv[1]+'.csv', 'w')
-        validation_file = open('split/validation_'+sys.argv[1]+'.csv', 'w')
-        testing_file = open('split/testing_'+sys.argv[1]+'.csv', 'w')
+    with open('preprocessed/processed_allFiles.csv', 'r') as csv_file_r:
+        training_file = open('split/training_allFiles.csv', 'w')
+        validation_file = open('split/validation_allFiles.csv', 'w')
+        testing_file = open('split/testing_allFiles.csv', 'w')
         
         reader = csv.DictReader(csv_file_r)
         fieldnames = ['filename', 'author', 'subreddit', 'title', 'text', 'sentLength', 'timestamp']

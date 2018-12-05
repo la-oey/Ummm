@@ -27,13 +27,13 @@ def main():
     controlSentences = 0
     ummWithControlSentences = 0
 
-    with open('preprocessed/processed_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
-        csv_file_w = open('postExtract/sample_'+sys.argv[1]+'.csv', 'w')
+    with open('preprocessed/split_'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
+        csv_file_w = open('postExtract/sample_'+sys.argv[1]+'_allFiles.csv', 'w')
         reader = csv.DictReader(csv_file_r)
         fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'text', 'sentLength', 'timestamp']
         writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
         writer.writeheader()
-        meta_file = open('postExtract/metadata_'+sys.argv[1]+'.txt', 'w')
+        meta_file = open('postExtract/metadata_'+sys.argv[1]+'_allFiles.txt', 'w')
         
         for r in reader:
             if r['filename'] not in filenames:

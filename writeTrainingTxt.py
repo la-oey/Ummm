@@ -15,8 +15,8 @@ filenames = dict()
 
 def main():
     start_time = time.time()
-    with open('split/training_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
-        training_file = open('trainingTxt_'+sys.argv[1]+'.txt', 'w')
+    with open('split/training_allFiles.csv', 'r') as csv_file_r:
+        training_file = open('trainingTxt_allFiles.txt', 'w')
         reader = csv.DictReader(csv_file_r)
         
         for r in reader:
