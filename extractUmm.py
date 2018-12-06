@@ -27,7 +27,7 @@ def main():
     controlSentences = 0
     ummWithControlSentences = 0
 
-    with open('preprocessed/split_'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
+    with open('split/'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
         csv_file_w = open('postExtract/sample_'+sys.argv[1]+'_allFiles.csv', 'w')
         reader = csv.DictReader(csv_file_r)
         fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'text', 'sentLength', 'timestamp']
