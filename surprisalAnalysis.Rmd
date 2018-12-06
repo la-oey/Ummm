@@ -1,0 +1,85 @@
+---
+title: "Suprisal Analysis of Umm-Containing Sentences"
+author: "Lauren Oey"
+date: "12/5/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(lme4)
+library(lmerTest)
+knitr::opts_chunk$set(echo = TRUE)
+
+df <- read_csv("umm_kenlm_output.csv")
+glimpse(df)
+```
+
+```{r}
+excluded <- df %>%
+  group_by(author, lexicalType, sentLength) %>%
+  summarise(count = n()) %>%
+  spread(lexicalType, count) %>%
+  filter(is.na(control)) %>%
+  .$author
+length(excluded) #authors excluded
+length(unique(df$author)) #total number of authors before exclusion
+
+df.final <- df %>%
+  filter(!author %in% excluded)
+```
+
+```{r}
+df.final %>%
+  group_by(lexicalType) %>%
+  summarise(count = n()) %>%
+  kable()
+
+ggplot(df.final, aes(x=lexicalType, y=kenlm_output)) +
+  geom_violin() +
+  ggtitle("Surprisal by Umm vs Control")
+```
+
+```{r}
+df.final %>%
+  filter(lexicalType == "umm") %>%
+  group_by(lexicalLength) %>%
+  summarise(count = n()) %>%
+  kable()
+```
+
+```{r}
+ggplot(filter(df.final, lexicalType=="umm"), aes(x=as.factor(lexicalLength), y=kenlm_output)) + 
+  geom_boxplot() +
+  ggtitle("Surprisal by Umm Length")
+```
+
+```{r}
+df.final %>%
+  group_by(lexicalType, sentLength) %>%
+  ggplot(aes(x=sentLength, fill=lexicalType)) +
+  geom_density(alpha=0.5) +
+  ggtitle("Distribution of Sentence Length Across Umm and Controls")
+```
+```{r}
+ggplot(df.final, aes(x=as.factor(sentLength), y=kenlm_output)) + 
+  geom_boxplot() +
+  facet_wrap(~lexicalType)
+```
+
+
+```{r}
+model <- lmer(kenlm_output ~ lexicalType + (1+lexicalType | author), data=df.final)
+summary(model)
+```
+
+
+
+
+
+
+

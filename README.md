@@ -56,29 +56,84 @@ CSV file: {
 - Tokenizes words and converts characters to lower-case
 - Rejoins words with whitespace
 
-(3b) CONCATERNATE PROCESSED FILES???? combine with 4? -from talking w/ Cate
+(4) concatenate.sh - Concatenates all of the preprocessing CSV files into a single CSV file
+* Reads in all files in the "preprocessed" directory
+* Writes to a CSV file called "preprocessed/processed_allFiles.csv"
+>>> chmod +x concatenate.sh
+>>> ./concatenate.sh
+- Writes header of the first file in the directory
+- Concatenates all of the rows from the CSV files into a single CSV file
 
-(4) splitData.py - Splits data into 3 mutually exclusive sets {training (~70\%), validation (~10\%), test (~20\%)} by author
-* Reads in the name XXX (in quotes), from (1), which allows the python code to read in the output from (3), i.e. "preprocessed/processed_[XXX].csv"
-* Writes to 3 CSV files in a directory called "split"; the created CSV file's name are "training_[XXX].csv" (e.g. "split/training_txtFiles1.csv"), "validation_[XXX].csv" (e.g. "split/validation_txtFiles1.csv"), "testing_[XXX].csv" (e.g. "split/testing_txtFiles1.csv")
->>> python splitData.py "[XXX]"
+(5) splitData.py - Splits data into 3 mutually exclusive sets {training (~35\%), validation (~45\%), test (~20\%)} by author
+* Reads in the "preprocessed/processed_allFiles.csv", created in (4)
+* Writes to 3 CSV files: "split/training_allFiles.csv", "split/validation_allFiles.csv", "split/testing_allFiles.csv"
+>>> python splitData.py
 - Distributes first sentence by a given author into each of the sets (training, validation, test) by corresponding probability value
 - Later sentences by the same author are distributed into the same set
 - This allows for more matches between critical items ("umm"-containing sentences) and controls
+- WHY 35\% AND NOT 70\% AS ORIGINALLY INTENDED
 
-(5) extractUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
-* Reads in the name YYY_XXX (in quotes), where YYY = {training, validation, testing} and XXX is from (1), which allows the python code to read in the output from (4), i.e. "split/[YYY]_[XXX].csv" (e.g. "split/training_txtFiles1.csv")
+(6) writeTrainingTxt.py - Extracts text in training CSV file to text file
+* Reads in "split/training_allFiles.csv"
+* Writes to text file "trainingTxt_allFiles.txt"
+>>> python writeTrainingTxt.py
+- Extracts vector containing the relevant text in the training CSV file
+- Writes each sentence to the text file, separated by a newline
+
+(7) kenlm - Builds binary file for unpruned language model estimation
+from https://kheafield.com/code/kenlm/
+github: https://github.com/kpu/kenlm
+* Reads in "trainingTxt_allFiles.txt" created in (6) from its directory
+* Writes binary file that can be used to query the model
+(a) If kenlm not set up, use the following commands:
+>>> wget -O - https://kheafield.com/code/kenlm.tar.gz |tar xz
+>>> mkdir kenlm/build
+>>> cd kenlm/build
+>>> cmake ..
+>>> make -j2
+(b) Once kenlm is set up, use:
+>>> bin/lmplz -o 5 -S 80\% -T /tmp <../trainingTxt_allFiles.txt >reddit.arpa
+>>> bin/build_binary reddit.arpa reddit.binary
+
+(8) extractUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
+* Reads in the name YYY (in quotes), where YYY = {training, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
 * Requires nltk
-* Writes to a CSV file in a directory called "postExtract"; the created CSV file's name is "sample_[YYY]_[XXX].csv" (e.g. "postExtract/sample_training_txtFiles1.csv")
-* Writes to a .txt file in the "postExtract" directory; the created .txt file's name is "metadata_[YYY]_[XXX].txt" (e.g. "postExtract/metadata_training_txtFiles1.csv")
->>> python extractUmm.py "[YYY]_[XXX]"
+* Writes to a CSV file in a directory called "postExtract"; the created CSV file's name is "sample_[YYY]_allFiles.csv" (e.g. "postExtract/sample_testing_allFiles.csv")
+* Writes to a .txt file in the "postExtract" directory; the created .txt file's name is "metadata_[YYY]_allFiles.txt" (e.g. "postExtract/metadata_testing_allFiles.csv")
+>>> python extractUmm.py "[YYY]"
+YYY = {training, validation, testing}
 - Critical "umm"-containing sentences defined as sentences containing a word match to "^umm+$" (e.g. umm, ummmmmmm)
 - Control sentences defined as sentences by the same author and the same sentence length as an "umm"-containing sentence
 metadata format:
-Total Words in File:   ???   total number of words in all posts for a given file
-Umm Words in Files:   ???   total number of "umm" words
-Total Sentences in File:   ???   total number of sentences
-Umm Sentences in File:   ???   total number of critical "umm"-containing sentences
-Control Sentences in File:   ???   total number of control sentences
-Umm Sentences w/ Control in File:   ???   total number of critical "umm"-containing sentences with at least one control sentence
-CSV file
+Total Words in File:   11,695,887,827   total number of words in all posts for a given file
+Umm Words in Files:   39,736   total number of "umm" words
+Total Sentences in File:   691,806,808   total number of sentences
+Umm Sentences in File:   36,203   total number of critical "umm"-containing sentences
+Control Sentences in File:   1,818,639   total number of control sentences
+Umm Sentences w/ Control in File:   19,985   total number of critical "umm"-containing sentences with at least one control sentence
+CSV file: {
+	filename: from (1),
+	author: from (1),
+	subreddit: from (1),
+	title: from (1),
+	lexicalType: {umm, control},
+	lexicalItem: {umm token (e.g. umm, ummmmmm), NA},
+	lexicalLength: {character length of umm token (e.g. 3+), NA},
+	text: from (3) (prerprocessed text),
+	sentLength: sentence length,
+	timestamp: from (1)}
+
+(9) kenlm_test.py - Queries language model with critical "umm"-containing and control sentences
+* Reads in "postExtract/sample_testing_allFiles.csv" created in (8)
+* Requires kenlm python package
+* Writes to a CSV file "umm_kenlm_output.csv"
+>>> python test_kenlm.py
+- Initial run through takes awhile because it is training the model
+- Sequential run throughs are much faster (~4 seconds total)
+- Outputs surpisal value from kenlm model in "kenlm_output" vector
+
+(10) suprisalAnalysis.Rmd - Data analysis of surprisal
+* Reads in "Umm_kenlm_output.csv"
+* Creates PDF of cleaning, visualization, and data analysis
+
+
