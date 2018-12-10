@@ -24,7 +24,17 @@ glimpse(df)
 ```
 
 ```{r}
+df %>%
+  group_by(author) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  mutate(prop = count / n()) %>%
+  arrange(desc(prop))
+  
+
+
 excluded <- df %>%
+  filter(!grepl("bot$", author, ignore.case=TRUE)) %>%
   group_by(author, lexicalType, sentLength) %>%
   summarise(count = n()) %>%
   spread(lexicalType, count) %>%
@@ -104,7 +114,7 @@ listToScore <- function(scoreList, index, dir){
       subX <- Reduce("+",numList[1:index])
     }
   } else{
-    if(index + 2 > length(numList)){
+    if((index + 2) > length(numList)){
       subX <- NA
     } else{
       subX <- Reduce("+",numList[(index+2):length(numList)])
@@ -124,7 +134,9 @@ allSamples2 <- df.final %>%
          score.postSplit = mapply(listToScore, fullScores, lexicalIndex, "after"),
          score.postSplitByLen = ifelse(is.na(score.postSplit), NA, score.postSplit / (sentLength - lexicalIndex)))
 write.csv(allSamples2, "processed.csv")
+```
 
+```{r}
 graph.beforeUmm <- allSamples2 %>%
   filter(!is.na(score.preSplitByLen)) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
@@ -156,6 +168,18 @@ graph.afterBeforeDiff <- allSamples2 %>%
   geom_violin() +
   ggtitle("Avg Difference (Post-Pre)-Umm Surprisal by Umm vs Control")
 graph.afterBeforeDiff
+```
+
+```{r}
+graph.preVsPost <- allSamples2 %>%
+  filter(!is.na(score.postSplitByLen) & !is.na(score.preSplitByLen)) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen),
+            avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
+  ggplot(aes(x=avgPreSplitScoreByLen, y=avgPostSplitScoreByLen)) +
+  geom_point() +
+  facet_wrap(~lexicalType)
+ggsave("graph.preVsPost.png")
 ```
 
 ```{r}
