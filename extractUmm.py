@@ -30,7 +30,7 @@ def main():
     with open('split/'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
         csv_file_w = open('postExtract/sample_'+sys.argv[1]+'_allFiles.csv', 'w')
         reader = csv.DictReader(csv_file_r)
-        fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'text', 'sentLength', 'timestamp']
+        fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'text', 'sentLength', 'timestamp']
         writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
         writer.writeheader()
         meta_file = open('postExtract/metadata_'+sys.argv[1]+'_allFiles.txt', 'w')
@@ -56,10 +56,12 @@ def main():
                     # loops through each word in the sentence and finds the word match
                     # used for retrieving the word and the length of the word
                     # records a row in the csv for each word match
+                    ind = 0
                     for w in r['text'].split():  
                         if re.match("^umm+$", w):
-                            writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'umm', 'lexicalItem':w, 'lexicalLength':len(w), 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp']})
+                            writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'umm', 'lexicalItem':w, 'lexicalLength':len(w), 'lexicalIndex':ind, 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp']})
                             ummWords = ummWords + 1
+                        ind = ind + 1
 
                 # collects controls
                 # checks among non-umm containing sentences if author entry exists and sentence length is contained within the array
@@ -69,7 +71,7 @@ def main():
                     if authorLength not in ummControl:
                         ummWithControlSentences = ummWithControlSentences + 1
                         ummControl[authorLength] = [authorLength]
-                    writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp']})
+                    writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'lexicalIndex':'NA', 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp']})
 
         meta_file.write('Total Words in File: ' + str(totalWords) + "\n")
         meta_file.write("Umm Words in Files: " + str(ummWords) + "\n")
@@ -80,6 +82,6 @@ def main():
         meta_file.close()
         csv_file_w.close()
         csv_file_r.close()
-    print("Run Time: " + str(time.time()-start_time) + " seconds")
+    print("extractUmm.py Run Time: " + str(time.time()-start_time) + " seconds")
 
 main()

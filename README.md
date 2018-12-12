@@ -64,14 +64,14 @@ CSV file: {
 - Writes header of the first file in the directory
 - Concatenates all of the rows from the CSV files into a single CSV file
 
-(5) splitData.py - Splits data into 3 mutually exclusive sets {training (~35\%), validation (~45\%), test (~20\%)} by author
+(5) splitData.py - Splits data into 3 mutually exclusive sets {training (~35\%), validation (~35\%), test (~30\%)} by author
 * Reads in the "preprocessed/processed_allFiles.csv", created in (4)
 * Writes to 3 CSV files: "split/training_allFiles.csv", "split/validation_allFiles.csv", "split/testing_allFiles.csv"
 >>> python splitData.py
 - Distributes first sentence by a given author into each of the sets (training, validation, test) by corresponding probability value
 - Later sentences by the same author are distributed into the same set
 - This allows for more matches between critical items ("umm"-containing sentences) and controls
-- WHY 35\% AND NOT 70\% AS ORIGINALLY INTENDED
+- Training set size decided because of limitations in kenlm capacity to train on a larger data set
 
 (6) writeTrainingTxt.py - Extracts text in training CSV file to text file
 * Reads in "split/training_allFiles.csv"
@@ -105,12 +105,12 @@ YYY = {training, validation, testing}
 - Critical "umm"-containing sentences defined as sentences containing a word match to "^umm+$" (e.g. umm, ummmmmmm)
 - Control sentences defined as sentences by the same author and the same sentence length as an "umm"-containing sentence
 metadata format:
-Total Words in File:   11,695,887,827   total number of words in all posts for a given file
-Umm Words in Files:   39,736   total number of "umm" words
-Total Sentences in File:   691,806,808   total number of sentences
-Umm Sentences in File:   36,203   total number of critical "umm"-containing sentences
-Control Sentences in File:   1,818,639   total number of control sentences
-Umm Sentences w/ Control in File:   19,985   total number of critical "umm"-containing sentences with at least one control sentence
+Total Words in File:   11,576,342,718   total number of words in all posts for a given file
+Umm Words in Files:   39,429   total number of "umm" words
+Total Sentences in File:   685,388,022   total number of sentences
+Umm Sentences in File:   35,899   total number of critical "umm"-containing sentences
+Control Sentences in File:   821,361   total number of control sentences
+Umm Sentences w/ Control in File:   19,831   total number of critical "umm"-containing sentences with at least one control sentence
 CSV file: {
 	filename: from (1),
 	author: from (1),
@@ -123,17 +123,29 @@ CSV file: {
 	sentLength: sentence length,
 	timestamp: from (1)}
 
-(9) kenlm_test.py - Queries language model with critical "umm"-containing and control sentences
-* Reads in "postExtract/sample_testing_allFiles.csv" created in (8)
+(9) kenlm_test.py - Queries language model for surprisal with critical "umm"-containing and control sentences
+* Reads in "postExtract/sample_[YYY]_allFiles.csv" created in (8) (e.g. "postExtract/sample_testing_allFiles.csv")
 * Requires kenlm python package
-* Writes to a CSV file "umm_kenlm_output.csv"
->>> python test_kenlm.py
+* Writes to a CSV file "umm_kenlm_output_[YYY].csv"
+>>> python test_kenlm.py "[YYY]"
 - Initial run through takes awhile because it is training the model
-- Sequential run throughs are much faster (~4 seconds total)
-- Outputs surpisal value from kenlm model in "kenlm_output" vector
+- Sequential run throughs are much faster (~20 seconds total)
+- Outputs log10(probability(word|prev words)) for each sentence from kenlm model in "kenlm_output" vector
+- Outputs log10(probability(word|prev words)) as list for each word in sentence
 
 (10) suprisalAnalysis.Rmd - Data analysis of surprisal
-* Reads in "Umm_kenlm_output.csv"
+* Reads in "Umm_kenlm_output_[YYY].csv"
 * Creates PDF of cleaning, visualization, and data analysis
+>>> knit to PDF
+- All critical "umm" sentences have a corresponding control sentence matched for author and sentence length
+- Dependent measures:
+(1) Surprisal of sentence after critical lexical index
+Cleaning
+-
+Visualizations
+- Each point is surprisal averaged over all instances of critical or control sentences for a given author and sentence length
+- In (2) and (3), for instances in which there are m
+Analysis
+
 
 

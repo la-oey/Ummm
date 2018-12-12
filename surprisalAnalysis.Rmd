@@ -19,7 +19,7 @@ library(lme4)
 library(lmerTest)
 knitr::opts_chunk$set(echo = TRUE)
 
-df <- read_csv("umm_kenlm_output_training.csv")
+df <- read_csv("umm_kenlm_output_validation.csv")
 glimpse(df)
 ```
 
@@ -30,11 +30,16 @@ df %>%
   ungroup() %>%
   mutate(prop = count / n()) %>%
   arrange(desc(prop))
-  
 
+# authors to remove separately:
+# {AutoModerator, scamcop, peterboykin, censorship_notifier, subredditreports} #suspicious bot-like authors
+
+df <- df %>%
+  filter(!grepl("bot$", author, ignore.case=TRUE))
+
+# excludes critical items without a control for author and sentence length
 
 excluded <- df %>%
-  filter(!grepl("bot$", author, ignore.case=TRUE)) %>%
   group_by(author, lexicalType, sentLength) %>%
   summarise(count = n()) %>%
   spread(lexicalType, count) %>%
@@ -42,9 +47,78 @@ excluded <- df %>%
   select(author, sentLength)
 nrow(excluded) #authors + sentLength excluded
 
-df.final <- df %>%
+df <- df %>%
   anti_join(excluded, by=c("author","sentLength")) %>%
-  mutate(sentScoreByLen = sentScore / (sentLength+1)) # +1 because of surprisal measure on end of sentence
+  mutate(sentScore = -log2(10)*sentScore, #instead of log probability, now -log probability
+         lexicalIndex = lexicalIndex + 1) #convert python indexing to R indexing
+```
+
+
+```{r}
+multipleIndices <- df %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(count = n()) %>%
+  group_by(author, lexicalType, sentLength) %>%
+  mutate(sum = sum(count)) %>%
+  filter(lexicalType == "umm" & count != sum) %>%
+  select(author, lexicalType, sentLength, lexicalIndex) %>%
+  group_by(author, sentLength) %>%
+  summarise(indices = paste(lexicalIndex, collapse=","))
+  
+multIndicesSamples.control <- df %>%
+  right_join(multipleIndices, by=c("author","sentLength")) %>%
+  filter(lexicalType == "control") %>%
+  mutate(lexicalIndex=strsplit(indices, ",")) %>%
+  unnest(lexicalIndex) %>%
+  mutate(lexicalIndex = as.numeric(lexicalIndex)) %>%
+  select(-"indices")
+
+singIndicesSamples.umm.vectors <- df %>%
+  anti_join(multipleIndices, by=c("author", "sentLength")) %>%
+  filter(lexicalType == "umm") %>%
+  select(author, sentLength, lexicalIndex)
+
+singIndicesSamples.control <- df %>%
+  anti_join(multipleIndices, by=c("author", "sentLength")) %>%
+  select(-"lexicalIndex") %>%
+  left_join(singIndicesSamples.umm.vectors, by=c("author","sentLength")) %>%
+  filter(lexicalType == "control")
+
+listToScore <- function(scoreList, index, dir){
+  #print(scoreList)
+  numList <- -log2(10)*as.numeric(unlist(str_split(scoreList, ", ")))
+  if(dir == "at"){
+    subX <- Reduce("+",numList[index])
+  } else if(dir == "before"){
+    if(index == 1){
+      subX <- NA
+    } else{
+      subX <- Reduce("+",numList[1:(index-1)])
+    }
+  } else{
+    #print(numList)
+    if((index + 1) >= length(numList)){
+      subX <- NA
+    } else{
+      subX <- Reduce("+",numList[(index+1):length(numList)])
+    }
+  }
+  return(subX)
+}
+
+df.final <- df %>%
+  filter(lexicalType == "umm") %>%
+  bind_rows(multIndicesSamples.control, singIndicesSamples.control) %>%
+  filter(lexicalIndex > 2 & lexicalIndex < sentLength) %>% #excludes words in which umm appears in the zeroth, first, or last index
+  mutate(fullScores = str_replace_all(fullScores,"[\\[\\]]",""),
+         sentScoreByLen = sentScore / (sentLength+1), # +1 because of surprisal measure on end of sentence
+         #wordSplit = word(text, lexicalIndex),
+         score.preSplit = mapply(listToScore, fullScores, lexicalIndex, "before"),
+         score.preSplitByLen = ifelse(is.na(score.preSplit), NA, score.preSplit / (lexicalIndex-1)),
+         score.atSplit = mapply(listToScore, fullScores, lexicalIndex, "at"),
+         score.postSplit = mapply(listToScore, fullScores, lexicalIndex, "after"),
+         score.postSplitByLen = ifelse(is.na(score.postSplit), NA, score.postSplit / (sentLength + 1 - lexicalIndex)))
+write.csv(df.final, "processed.csv")
 ```
 
 ```{r}
@@ -65,79 +139,7 @@ graph.sent
 ```
 
 ```{r}
-excluded2 <- df.final %>%
-  mutate(lexicalIndex = ifelse(lexicalType == "control", -1, lexicalIndex)) %>%
-  group_by(author, lexicalType, sentLength) %>%
-  filter(lexicalIndex != sentLength - 1) %>%
-  summarise(count = n()) %>%
-  spread(lexicalType, count) %>%
-  filter(is.na(umm)) %>%
-  select(author, sentLength)
-
-multipleIndices <- df.final %>%
-  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
-  summarise(count = n()) %>%
-  group_by(author, lexicalType, sentLength) %>%
-  mutate(sum = sum(count)) %>%
-  filter(lexicalType == "umm" & count != sum) %>%
-  select(author, lexicalType, sentLength, lexicalIndex) %>%
-  group_by(author, sentLength) %>%
-  summarise(indices = paste(lexicalIndex, collapse=","))
-  
-multIndicesSamples.control <- df.final %>%
-  right_join(multipleIndices, by=c("author","sentLength")) %>%
-  filter(lexicalType == "control") %>%
-  mutate(lexicalIndex=strsplit(indices, ",")) %>%
-  unnest(lexicalIndex) %>%
-  mutate(lexicalIndex = as.numeric(lexicalIndex)) %>%
-  select(-"indices")
-
-singIndicesSamples.umm.vectors <- df.final %>%
-  anti_join(multipleIndices, by=c("author", "sentLength")) %>%
-  filter(lexicalType == "umm") %>%
-  select(author, sentLength, lexicalIndex)
-
-singIndicesSamples.control <- df.final %>%
-  anti_join(multipleIndices, by=c("author", "sentLength")) %>%
-  select(-"lexicalIndex") %>%
-  left_join(singIndicesSamples.umm.vectors, by=c("author","sentLength")) %>%
-  filter(lexicalType == "control")
-
-listToScore <- function(scoreList, index, dir){
-  numList <- as.numeric(unlist(str_split(scoreList, ", ")))
-  if(dir == "at"){
-    subX <- Reduce("+",numList[index+1])
-  } else if(dir == "before"){
-    if(index == 0){
-      subX <- NA
-    } else{
-      subX <- Reduce("+",numList[1:index])
-    }
-  } else{
-    if((index + 2) > length(numList)){
-      subX <- NA
-    } else{
-      subX <- Reduce("+",numList[(index+2):length(numList)])
-    }
-  }
-  return(subX)
-}
-
-allSamples2 <- df.final %>%
-  filter(lexicalType == "umm") %>%
-  bind_rows(multIndicesSamples.control, singIndicesSamples.control) %>%
-  mutate(fullScores = str_replace_all(fullScores,"[\\[\\]]",""),
-         wordSplit = word(text, lexicalIndex+1),
-         score.preSplit = mapply(listToScore, fullScores, lexicalIndex, "before"),
-         score.preSplitByLen = ifelse(is.na(score.preSplit), NA, score.preSplit / lexicalIndex),
-         score.atSplit = mapply(listToScore, fullScores, lexicalIndex, "at"),
-         score.postSplit = mapply(listToScore, fullScores, lexicalIndex, "after"),
-         score.postSplitByLen = ifelse(is.na(score.postSplit), NA, score.postSplit / (sentLength - lexicalIndex)))
-write.csv(allSamples2, "processed.csv")
-```
-
-```{r}
-graph.beforeUmm <- allSamples2 %>%
+graph.beforeUmm <- df.final %>%
   filter(!is.na(score.preSplitByLen)) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
@@ -148,7 +150,7 @@ graph.beforeUmm
 ```
 
 ```{r}
-graph.afterUmm <- allSamples2 %>%
+graph.afterUmm <- df.final %>%
   filter(!is.na(score.postSplitByLen)) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   summarise(avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
@@ -156,11 +158,68 @@ graph.afterUmm <- allSamples2 %>%
   geom_violin() +
   ggtitle("Avg Post-Umm Surprisal by Umm vs Control")
 graph.afterUmm
+
+df.final %>%
+  filter(!is.na(score.postSplitByLen)) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgPostSplitScoreByLen))
 ```
 
 ```{r}
-graph.afterBeforeDiff <- allSamples2 %>%
-  filter(!is.na(score.postSplitByLen) & !is.na(score.preSplitByLen)) %>%
+df.final$lexicalType <- as.factor(df.final$lexicalType)
+df.final$sentLength.f <- as.factor(df.final$sentLength)
+df.final$author.f <- as.factor(df.final$author)
+contrasts(df.final$lexicalType)
+model <- lmer(score.postSplitByLen ~ lexicalType + (1 | author.f) + (1 + lexicalType | sentLength.f), data=df.final)
+summary(model)
+
+model2 <- lmer(score.postSplitByLen ~ lexicalType + (1 + lexicalType | author.f) + (1 + lexicalType | sentLength.f), data=df.final)
+summary(model2)
+```
+
+```{r}
+df.final %>%
+  filter(sentLength < 24) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
+  ggplot(aes(x=lexicalType, y=avgPostSplitScoreByLen)) +
+  geom_violin() +
+  ggtitle("Avg Post-Umm Surprisal by Number of Words After Umm Until End of Sentence") +
+  facet_wrap(~as.factor(sentLength - lexicalIndex))
+```
+
+```{r}  
+df.final %>%
+  filter(!is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%  
+  ggplot(aes(x=lexicalType, y=avgPreSplitScoreByLen)) +
+  geom_violin() +
+  ggtitle("Avg Pre-Umm Surprisal by Umm vs Control")
+
+df.final %>%
+  filter(!is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgPreSplitScoreByLen))
+```
+
+```{r}
+df.final %>%
+  filter(sentLength < 24) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
+  ggplot(aes(x=lexicalType, y=avgPreSplitScoreByLen)) +
+  geom_violin() +
+  ggtitle("Avg Pre-Umm Surprisal by Umm vs Controlby Number of Words Before Umm") +
+  facet_wrap(~as.factor(lexicalIndex))
+```
+
+```{r}
+graph.afterBeforeDiff <- df.final %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   mutate(diffScoreSplit = score.postSplitByLen - score.preSplitByLen) %>%
   summarise(avgDiffScoreSplit = mean(diffScoreSplit)) %>%
@@ -168,10 +227,19 @@ graph.afterBeforeDiff <- allSamples2 %>%
   geom_violin() +
   ggtitle("Avg Difference (Post-Pre)-Umm Surprisal by Umm vs Control")
 graph.afterBeforeDiff
+
+
+df.final %>%
+  filter(!is.na(score.postSplitByLen) & !is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  mutate(diffScoreSplit = score.postSplitByLen - score.preSplitByLen) %>%
+  summarise(avgDiffScoreSplit = mean(diffScoreSplit)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgDiffScoreSplit))
 ```
 
 ```{r}
-graph.preVsPost <- allSamples2 %>%
+graph.preVsPost <- df.final %>%
   filter(!is.na(score.postSplitByLen) & !is.na(score.preSplitByLen)) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen),
@@ -197,3 +265,165 @@ grid.arrange(graph.sent +
                scale_y_continuous(limits=c(-4,9)),
              nrow=1)
 ```
+
+
+## Umm Length Analysis
+
+```{r}
+df.final %>%
+  filter(lexicalType == "umm") %>%
+  ggplot(aes(x=lexicalLength)) +
+  geom_bar() +
+  ggtitle("Counts of Umm Length") +
+  scale_x_continuous(limits=c(2,12))
+```
+
+```{r}
+multipleLexLengths <- df.final %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex, lexicalLength) %>%
+  summarise(count = n()) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  mutate(sum = sum(count)) %>%
+  filter(lexicalType == "umm" & count != sum) %>%
+  select(author, lexicalType, sentLength, lexicalLength) %>%
+  group_by(author, sentLength, lexicalIndex) %>%
+  summarise(lexLengths = paste(lexicalLength, collapse=","))
+  
+multLexLengthsSamples.control <- df.final %>%
+  right_join(multipleLexLengths, by=c("author","sentLength","lexicalIndex")) %>%
+  filter(lexicalType == "control") %>%
+  unique() %>%
+  mutate(lexicalLength=strsplit(lexLengths, ",")) %>%
+  unnest(lexicalLength) %>%
+  mutate(lexicalLength = as.numeric(lexicalLength)) %>%
+  select(-"lexLengths")
+
+singLexLengthsSamples.umm.vectors <- df.final %>%
+  anti_join(multipleLexLengths, by=c("author","sentLength","lexicalIndex")) %>%
+  filter(lexicalType == "umm") %>%
+  select(author, sentLength, lexicalIndex, lexicalLength)
+
+singLexLengthsSamples.control <- df.final %>%
+  anti_join(multipleLexLengths, by=c("author","sentLength","lexicalIndex")) %>%
+  select(-"lexicalLength") %>%
+  left_join(singLexLengthsSamples.umm.vectors, by=c("author","sentLength","lexicalIndex")) %>%
+  filter(lexicalType == "control")
+
+df.ummLength <- df.final %>%
+  filter(lexicalType == "umm") %>%
+  bind_rows(multLexLengthsSamples.control, singLexLengthsSamples.control) %>%
+  mutate(excludeUmm = score.preSplit + score.postSplit,
+         excludeUmmByLen = excludeUmm / sentLength)
+
+# df.ummLength %>%
+#   filter(lexicalType == "umm") %>%
+#   ggplot(aes(x=log10(lexicalLength), y=score.atSplit)) +
+#   geom_point()
+
+df.ummLength %>%
+  group_by(author, sentLength, lexicalType, lexicalIndex, lexicalLength) %>%
+  summarise(meanExclUmmByLen = mean(excludeUmmByLen)) %>%
+  ggplot(aes(x=log10(lexicalLength), y=meanExclUmmByLen)) +
+  geom_point() +
+  ggtitle("Avg Sentence Level Surprisal (Excluding Umm) by Lexical Length") +
+  facet_wrap(~lexicalType)
+
+df.ummLength %>%
+  group_by(author, sentLength, lexicalType, lexicalIndex, lexicalLength) %>%
+  summarise(meanExclUmmByLen = mean(excludeUmmByLen)) %>%
+  group_by(lexicalLength) %>%
+  mutate(count = n()) %>%
+  filter(count > 4) %>%
+  ggplot(aes(x=lexicalType, y=meanExclUmmByLen)) +
+  geom_violin() +
+  ggtitle("Avg Sentence Level Surprisal (Excluding Umm) by Lexical Length") +
+  facet_wrap(~lexicalLength)
+```
+
+```{r}
+df.ummLength %>%
+  group_by(author, sentLength, lexicalType, lexicalIndex, lexicalLength) %>%
+  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
+  group_by(lexicalLength) %>%
+  mutate(count = n()) %>%
+  filter(count > 4) %>%
+  ggplot(aes(x=lexicalType, y=avgPreSplitScoreByLen)) +
+  geom_violin() +
+  ggtitle("Pre-Umm Surprisal by Lexical Length") +
+  facet_wrap(~lexicalLength)
+```
+
+```{r}
+df.ummLength %>%
+  group_by(author, sentLength, lexicalType, lexicalIndex, lexicalLength) %>%
+  summarise(avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
+  group_by(lexicalLength) %>%
+  mutate(count = n()) %>%
+  filter(count > 4) %>%
+  ggplot(aes(x=lexicalType, y=avgPostSplitScoreByLen)) +
+  geom_violin() +
+  ggtitle("Post-Umm Surprisal by Lexical Length") +
+  facet_wrap(~lexicalLength)
+```
+
+```{r}
+df.ummLength %>%
+  mutate(diffScoreSplit = score.postSplitByLen - score.preSplitByLen) %>%
+  group_by(author, sentLength, lexicalType, lexicalIndex, lexicalLength) %>%
+  summarise(avgDiffScoreSplit = mean(diffScoreSplit)) %>%
+  group_by(lexicalLength) %>%
+  mutate(count = n()) %>%
+  filter(count > 4) %>%
+  ggplot(aes(x=lexicalType, y=avgDiffScoreSplit)) +
+  geom_violin() +
+  ggtitle("Avg Difference (Post-Pre)-Umm Surprisal by Lexical Length") +
+  facet_wrap(~lexicalLength)
+```
+
+
+## Poor Man's Time Series
+
+```{r}
+# function from above
+# listToScore <- function(scoreList, index, dir){
+#   numList <- -as.numeric(unlist(str_split(scoreList, ", ")))
+#   if(dir == "at"){
+#     subX <- Reduce("+",numList[index])
+#   } else if(dir == "before"){
+#     if(index == 1){
+#       subX <- NA
+#     } else{
+#       subX <- Reduce("+",numList[1:(index-1)])
+#     }
+#   } else{
+#     if((index + 1) >= length(numList)){
+#       subX <- NA
+#     } else{
+#       subX <- Reduce("+",numList[(index+1):length(numList)])
+#     }
+#   }
+#   return(subX)
+# }
+
+poorManTimeSers <- df %>%
+  filter(lexicalType == "umm") %>%
+  bind_rows(multIndicesSamples.control, singIndicesSamples.control) %>%
+  filter(lexicalIndex > 2 & lexicalIndex < sentLength) %>%
+  mutate(fullScores = str_replace_all(fullScores,"[\\[\\]]",""),
+         eachIndex = mapply(function(x) 2:(x-1), sentLength)) %>%
+  unnest(eachIndex) %>%
+  mutate(preSurprisal = mapply(listToScore, fullScores, eachIndex, "before"),
+         postSurprisal = mapply(listToScore, fullScores, eachIndex, "after"),
+         preSurprisalByLen = preSurprisal / (eachIndex - 1),
+         postSurprisalByLen = postSurprisal / (sentLength + 1 - eachIndex),
+         diff = postSurprisalByLen - preSurprisalByLen,
+         normedIndex = eachIndex - lexicalIndex)
+
+poorManTimeSers %>%
+  group_by(lexicalType, normedIndex) %>%
+  summarise(avgDiff = mean(diff)) %>%
+  ggplot(aes(x=normedIndex, y=avgDiff, colour=lexicalType)) +
+  geom_line() +
+  ggtitle("Averaged Surprisal Difference (Post-Pre) by Index Relative to Critical Index")
+```
+

@@ -19,12 +19,12 @@ filenames = dict()
 
 # proportion of data in each set
 p_train = 0.35
-p_validate = 0.45
-p_test = 0.20
+p_validate = 0.35
+p_test = 0.30
 
 def main():
     start_time = time.time()
-    with open('preprocessed/processed_allFiles.csv', 'r') as csv_file_r:
+    with open('cleanAuthor/processed_allFiles.csv', 'r') as csv_file_r:
         training_file = open('split/training_allFiles.csv', 'w')
         validation_file = open('split/validation_allFiles.csv', 'w')
         testing_file = open('split/testing_allFiles.csv', 'w')
@@ -65,7 +65,7 @@ def main():
         training_file.close()
         validation_file.close()
         testing_file.close()
-    print("Run Time: " + str(time.time()-start_time) + " seconds")
+    print("splitData.py Run Time: " + str(time.time()-start_time) + " seconds")
                     
 main()          
         

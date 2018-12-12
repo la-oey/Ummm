@@ -27,6 +27,6 @@ def main():
             training_file.write(r['text'] + "\n")
         training_file.close()
         csv_file_r.close()
-    print("Run Time: " + str(time.time()-start_time) + " seconds")
+    print("writeTrainingTxt.py Run Time: " + str(time.time()-start_time) + " seconds")
 
 main()
