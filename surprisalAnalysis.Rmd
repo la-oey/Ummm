@@ -1,5 +1,5 @@
 ---
-title: "Suprisal Analysis of Umm-Containing Sentences"
+title: "Suprisal Analysis of Umm-Containing Sentences (Validation)"
 author: "Lauren Oey"
 date: "12/5/2018"
 output: pdf_document
@@ -100,7 +100,7 @@ listToScore <- function(scoreList, index, dir){
     if((index + 1) >= length(numList)){
       subX <- NA
     } else{
-      subX <- Reduce("+",numList[(index+1):length(numList)])
+      subX <- Reduce("+",numList[(index):length(numList)])
     }
   }
   return(subX)

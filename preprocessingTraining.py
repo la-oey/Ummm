@@ -41,7 +41,7 @@ def main():
                 print(r['filename'])
             text = r['text']
             author = r['author']
-            if (text not in ["NA", "[deleted]", "[removed]"]) and (author not in ["[deleted]", "autotldr"]) and (author not in botdict) and (re.match("bot$",author) == None) and (langid.classify(text)[0] == "en"): #removes deleted comments
+            if (text not in ["NA", "[deleted]", "[removed]"]) and (author not in ["[deleted]", "autotldr", "peterboykin", "censorship_notifier", "AutoModerator", "subredditreports", "scamcop"]) and (author not in botdict) and not re.match("^.+(bot)$", r['author'], re.IGNORECASE) and (langid.classify(text)[0] == "en"): #removes deleted comments
                 text = pattern_http.sub('', text)
                 text = pattern_www.sub('', text)
                 text = pattern_.sub('', text)

@@ -24,7 +24,7 @@ def main():
 	with open('postExtract/sample_'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
 		csv_file_w = open('umm_kenlm_output_'+sys.argv[1]+'.csv', 'w')
 		reader = csv.DictReader(csv_file_r)
-		fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'text', 'sentLength', 'timestamp', 'sentScore', 'fullScores']
+		fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'originalText', 'text', 'sentLength', 'timestamp', 'sentScore', 'fullScores']
 		writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
 		writer.writeheader()
 
@@ -38,7 +38,7 @@ def main():
 			for j, (prob, length, oov) in enumerate(model.full_scores(r['text'])):
 				scoreArr.append(prob)
 
-			writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':r['lexicalType'], 'lexicalItem':r['lexicalItem'], 'lexicalLength':r['lexicalLength'], 'lexicalIndex':r['lexicalIndex'], 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp'], 'sentScore':score, 'fullScores':scoreArr})
+			writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':r['lexicalType'], 'lexicalItem':r['lexicalItem'], 'lexicalLength':r['lexicalLength'], 'lexicalIndex':r['lexicalIndex'], 'originalText':r['originalText'], 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp'], 'sentScore':score, 'fullScores':scoreArr})
 		csv_file_w.close()
 		csv_file_r.close()
 	print("Model Run Time: " + str(model_train_time) + " seconds")

@@ -24,7 +24,7 @@ p_test = 0.30
 
 def main():
     start_time = time.time()
-    with open('cleanAuthor/processed_allFiles.csv', 'r') as csv_file_r:
+    with open('preprocessed/processed_allFiles.csv', 'r') as csv_file_r:
         training_file = open('split/training_allFiles.csv', 'w')
         validation_file = open('split/validation_allFiles.csv', 'w')
         testing_file = open('split/testing_allFiles.csv', 'w')
