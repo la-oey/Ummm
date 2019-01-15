@@ -16,8 +16,14 @@ filenames = dict()
 
 def main():
     start_time = time.time()
-    with open('split/training_allFiles.csv', 'r') as csv_file_r:
-        training_file = open('trainingTxt_allFiles.txt', 'w')
+    with open('split/'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
+    	if sys.argv[1] == "training":
+    		name = "train"
+    	elif sys.argv[1] == "training_valid":
+    		name = "valid"
+    	else:
+    		name = "test"
+        training_file = open('redditTrain/'+name+'.txt', 'w')
         reader = csv.DictReader(csv_file_r)
         
         for r in reader:
