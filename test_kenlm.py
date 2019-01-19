@@ -21,7 +21,7 @@ model_train_end_time = time.time()
 model_train_time = model_train_end_time - start_time
 
 def main():
-	with open('postExtract/sample_'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
+	with open('postExtract/sample_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
 		csv_file_w = open('umm_kenlm_output_'+sys.argv[1]+'.csv', 'w')
 		reader = csv.DictReader(csv_file_r)
 		fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'originalText', 'text', 'sentLength', 'timestamp', 'sentScore', 'fullScores']

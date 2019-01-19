@@ -12,10 +12,10 @@ Corpus approximately split into thirds (by GB) in different directories
 Directories and text files hosted on Leon's server
 
 Total (June 2005 - August 2018): 338 GB
-txtFiles0 (June 2005 - September 2014): 65 GB
-txtFiles1 (October 2014 - December 2015): 57  GB
-txtFiles2 (January 2016 - September 2017): 117 GB
-txtFiles3 (October 2017 - August 2018): 100 GB
+txtFiles0 (June 2005 - April 2015): 86 GB
+txtFiles1 (May 2015 - October 2016): 86  GB
+txtFiles2 (November 2016 - November 2017): 81 GB
+txtFiles3 (December 2017 - August 2018): 86 GB
 Test Files - to check run time with subset of data (directories not currently existing)
 1GB (April 2012): 998 MB
 10GB (May 2018): 9.9 GB
@@ -48,7 +48,8 @@ CSV file: {
 >>> python preprocessingTraining.py "[XXX]"
 - Removes sentences with "NA", "[deleted], "[removed]" as the text
 - Removes (bot) authors listed in "redditbots.txt"
-- Removes authors with "[deleted]", "autotldr", and ending in "bot" (e.g. "frontbot", "removalbot")
+- Removes authors named "[deleted]", "autotldr", "peterboykin", "censorship_notifier", "AutoModerator", "subredditreports", and "scamcop"
+- Removes authors whose name ends in "bot" (e.g. "frontbot", "removalbot")
 - Uses langid package to remove non-English sentences
 - Removes text starting with "http(s)://" or "www."
 - Removes "_"
@@ -98,11 +99,11 @@ github: https://github.com/kpu/kenlm
 (8) extractUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
 * Reads in the name YYY (in quotes), where YYY = {training, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
 * Requires nltk
-* Writes to a CSV file in a directory called "postExtract"; the created CSV file's name is "sample_[YYY]_allFiles.csv" (e.g. "postExtract/sample_testing_allFiles.csv")
-* Writes to a .txt file in the "postExtract" directory; the created .txt file's name is "metadata_[YYY]_allFiles.txt" (e.g. "postExtract/metadata_testing_allFiles.csv")
+* Writes to a CSV file in a directory called "postExtract"; the created CSV file's name is "sample_[YYY].csv" (e.g. "postExtract/sample_testing.csv")
+* Writes to a .txt file in the "postExtract" directory; the created .txt file's name is "metadata_[YYY].txt" (e.g. "postExtract/metadata_testing.csv")
 >>> python extractUmm.py "[YYY]"
 YYY = {training, validation, testing}
-- Critical "umm"-containing sentences defined as sentences containing a word match to "^umm+$" (e.g. umm, ummmmmmm)
+- Critical "umm"-containing sentences defined as sentences containing a word match to "^u(h+|m)m+$" (e.g. umm, ummmmmmm, UMMM, uhmm)
 - Control sentences defined as sentences by the same author and the same sentence length as an "umm"-containing sentence
 metadata format:
 Total Words in File:   11,576,342,718   total number of words in all posts for a given file
@@ -124,7 +125,7 @@ CSV file: {
 	timestamp: from (1)}
 
 (9) kenlm_test.py - Queries language model for surprisal with critical "umm"-containing and control sentences
-* Reads in "postExtract/sample_[YYY]_allFiles.csv" created in (8) (e.g. "postExtract/sample_testing_allFiles.csv")
+* Reads in "postExtract/sample_[YYY].csv" created in (8) (e.g. "postExtract/sample_testing.csv")
 * Requires kenlm python package
 * Writes to a CSV file "umm_kenlm_output_[YYY].csv"
 >>> python test_kenlm.py "[YYY]"

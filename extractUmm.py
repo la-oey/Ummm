@@ -27,13 +27,18 @@ def main():
     controlSentences = 0
     ummWithControlSentences = 0
 
-    with open('split/'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
-        csv_file_w = open('postExtract/sample_'+sys.argv[1]+'_allFiles.csv', 'w')
+    if sys.argv[1] == "all":
+    	fileR_name = 'preprocessed/processed_allFiles.csv'
+    else:
+    	fileR_name = 'split/'+sys.argv[1]+'_allFiles.csv'
+
+    with open(fileR_name, 'r') as csv_file_r:
+        csv_file_w = open('postExtract/sample_'+sys.argv[1]+'.csv', 'w')
         reader = csv.DictReader(csv_file_r)
         fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'originalText', 'text', 'sentLength', 'timestamp']
         writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
         writer.writeheader()
-        meta_file = open('postExtract/metadata_'+sys.argv[1]+'_allFiles.txt', 'w')
+        meta_file = open('postExtract/metadata_'+sys.argv[1]+'.txt', 'w')
         
         for r in reader:
             if r['filename'] not in filenames:
@@ -43,7 +48,7 @@ def main():
                 totalSentences = totalSentences + 1
                 totalWords = totalWords + int(r['sentLength'])
                 # checks for word match to umm and checks that sentence contains more than one word
-                if any(re.match("^umm+$", x) for x in r['text'].split()) and int(r['sentLength']) > 1:
+                if any(re.match("^u(h+|m)m+$", x, re.IGNORECASE) for x in r['text'].split()) and int(r['sentLength']) > 1:
                     ummSentences = ummSentences + 1
 
                     # loops through each word in the sentence and finds the word match
@@ -55,11 +60,11 @@ def main():
                     lexIndices =[]
                     newSent = []
                     for w in r['text'].split(): 
-                        if re.match("^umm+$", w):
-                            lexItems.append(w)
-                            lexLengths.append(len(w))
-                            lexIndices.append(ind)
-                            ummWords = ummWords + 1
+                        if re.match("^u(h+|m)m+$", w, re.IGNORECASE):
+                        	lexItems.append(w)
+                        	lexLengths.append(len(w))
+                        	lexIndices.append(ind)
+                        	ummWords = ummWords + 1
                         else:
                             newSent.append(w)
                         ind = ind + 1
