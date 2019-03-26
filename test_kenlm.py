@@ -14,9 +14,7 @@ csv.field_size_limit(sys.maxsize)
 from nltk.tokenize import RegexpTokenizer
 filenames = dict()
 start_time = time.time()
-model = kenlm.LanguageModel('../kenlm/build/reddit.binary')
-#sentence = 'this is a sentence .'
-#print(model.score(sentence))
+
 model_train_end_time = time.time()
 model_train_time = model_train_end_time - start_time
 
@@ -27,6 +25,13 @@ def main():
 		fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'originalText', 'text', 'sentLength', 'timestamp', 'sentScore', 'fullScores']
 		writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
 		writer.writeheader()
+
+		if sys.argv[2] == "crawl":
+			model = kenlm.LanguageModel('../en.trie')
+		elif sys.argv[2] == "reddit":
+			model = kenlm.LanguageModel('../kenlm/build/reddit.binary')
+		#sentence = 'this is a sentence .'
+		#print(model.score(sentence))
 
 		for r in reader:
 			if r['filename'] not in filenames:

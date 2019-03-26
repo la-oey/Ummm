@@ -1,7 +1,7 @@
 ---
-title: "Suprisal Analysis of Umm-Containing Sentences (Validation)"
+title: "Suprisal Analysis of Umm-Containing Sentences (Testing)"
 author: "Lauren Oey"
-date: "12/5/2018"
+date: "3/9/2019"
 output: pdf_document
 ---
 
@@ -19,7 +19,7 @@ library(lme4)
 library(lmerTest)
 knitr::opts_chunk$set(echo = TRUE)
 
-df <- read_csv("umm_kenlm_output_validation.csv")
+df <- read_csv("umm_kenlm_output_testing.csv")
 glimpse(df)
 ```
 
@@ -34,8 +34,8 @@ df %>%
 # authors to remove separately:
 # {AutoModerator, scamcop, peterboykin, censorship_notifier, subredditreports} #suspicious bot-like authors
 
-df <- df %>%
-  filter(!grepl("bot$", author, ignore.case=TRUE))
+# df <- df %>%
+#   filter(!grepl("bot$", author, ignore.case=TRUE))
 
 # excludes critical items without a control for author and sentence length
 
@@ -129,38 +129,87 @@ df.final %>%
 ```
 
 ```{r}
+Umm.summ <- df.final %>%
+  filter(!is.na(sentScoreByLen)) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgSentScoreByLen = mean(sentScoreByLen)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgSentScoreByLen),
+            se = sd(avgSentScoreByLen)/sqrt(n()))
+
 graph.sent <- df.final %>%
   group_by(author, lexicalType, sentLength) %>%
   summarise(avgSentScoreByLen = mean(sentScoreByLen)) %>%
   ggplot(aes(x=lexicalType, y=avgSentScoreByLen)) +
   geom_violin() +
-  ggtitle("Avg Sentence Level Surprisal by Umm vs Control")
+  geom_errorbar(aes(y=mean, min=mean-se, max=mean+se), width=0.1, data=Umm.summ) +
+  scale_x_discrete("") +
+  scale_y_continuous("Suprisal / Sentence Length") +
+  ggtitle("Sentence Level Surprisal")
 graph.sent
+ggsave("img/sentenceSurprisal.png",graph.sent)
+
+df.final %>%
+  group_by(author, lexicalType, sentLength) %>%
+  summarise(avgSentScoreByLen = mean(sentScoreByLen)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgSentScoreByLen))
 ```
 
 ```{r}
-graph.beforeUmm <- df.final %>%
+beforeUmm.summ <- df.final %>%
   filter(!is.na(score.preSplitByLen)) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgPreSplitScoreByLen),
+            se = sd(avgPreSplitScoreByLen)/sqrt(n()))
+
+graph.beforeUmm <- df.final %>%
+  filter(!is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
   ggplot(aes(x=lexicalType, y=avgPreSplitScoreByLen)) +
   geom_violin() +
-  ggtitle("Avg Pre-Umm Surprisal by Umm vs Control")
+  geom_errorbar(aes(y=mean, min=mean-se, max=mean+se), width=0.1, data=beforeUmm.summ) +
+  scale_x_discrete("") +
+  scale_y_continuous("Suprisal / Sentence Length") +
+  ggtitle("Pre-Umm Surprisal")
 graph.beforeUmm
+ggsave("img/preUmmSurprisal.png",graph.beforeUmm)
+
+df.final %>%
+  filter(!is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgPreSplitScoreByLen))
 ```
 
 ```{r}
+afterUmm.summ <- df.final %>%
+  filter(!is.na(score.postSplitByLen)) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  summarise(avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgPostSplitScoreByLen),
+            se = sd(avgPostSplitScoreByLen)/sqrt(n()))
+
 graph.afterUmm <- df.final %>%
   filter(!is.na(score.postSplitByLen)) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   summarise(avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
-  ggplot(aes(x=lexicalType, y=avgPostSplitScoreByLen)) +
-  geom_violin() +
-  ggtitle("Avg Post-Umm Surprisal by Umm vs Control")
+  ggplot(aes(x=lexicalType)) +
+  geom_violin(aes(y=avgPostSplitScoreByLen)) +
+  geom_errorbar(aes(y=mean, min=mean-se, max=mean+se), width=0.1, data=afterUmm.summ) +
+  scale_x_discrete("") +
+  scale_y_continuous("Suprisal / Sentence Length") +
+  ggtitle("Post-Umm Surprisal")
 graph.afterUmm
+ggsave("img/postUmmSurprisal.png",graph.afterUmm)
 
 df.final %>%
-  filter(!is.na(score.postSplitByLen)) %>%
+  filter(!is.na(score.postSplitByLen) & lexicalIndex > 1) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   summarise(avgPostSplitScoreByLen = mean(score.postSplitByLen)) %>%
   group_by(lexicalType) %>%
@@ -172,11 +221,11 @@ df.final$lexicalType <- as.factor(df.final$lexicalType)
 df.final$sentLength.f <- as.factor(df.final$sentLength)
 df.final$author.f <- as.factor(df.final$author)
 contrasts(df.final$lexicalType)
-model <- lmer(score.postSplitByLen ~ lexicalType + (1 | author.f) + (1 + lexicalType | sentLength.f), data=df.final)
-summary(model)
-
-model2 <- lmer(score.postSplitByLen ~ lexicalType + (1 + lexicalType | author.f) + (1 + lexicalType | sentLength.f), data=df.final)
-summary(model2)
+# model <- lmer(score.postSplitByLen ~ lexicalType + (1 | author.f) + (1 + lexicalType | sentLength.f), data=df.final)
+# summary(model)
+# 
+# model2 <- lmer(score.postSplitByLen ~ lexicalType + (1 + lexicalType | author.f) + (1 + lexicalType | sentLength.f), data=df.final)
+# summary(model2)
 ```
 
 ```{r}
@@ -190,23 +239,6 @@ df.final %>%
   facet_wrap(~as.factor(sentLength - lexicalIndex))
 ```
 
-```{r}  
-df.final %>%
-  filter(!is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
-  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
-  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%  
-  ggplot(aes(x=lexicalType, y=avgPreSplitScoreByLen)) +
-  geom_violin() +
-  ggtitle("Avg Pre-Umm Surprisal by Umm vs Control")
-
-df.final %>%
-  filter(!is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
-  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
-  summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
-  group_by(lexicalType) %>%
-  summarise(mean = mean(avgPreSplitScoreByLen))
-```
-
 ```{r}
 df.final %>%
   filter(sentLength < 24) %>%
@@ -214,20 +246,33 @@ df.final %>%
   summarise(avgPreSplitScoreByLen = mean(score.preSplitByLen)) %>%
   ggplot(aes(x=lexicalType, y=avgPreSplitScoreByLen)) +
   geom_violin() +
-  ggtitle("Avg Pre-Umm Surprisal by Umm vs Controlby Number of Words Before Umm") +
+  ggtitle("Avg Pre-Umm Surprisal by Umm vs Control by Number of Words Before Umm") +
   facet_wrap(~as.factor(lexicalIndex))
 ```
 
 ```{r}
+diffUmm.summ <- df.final %>%
+  filter(!is.na(score.postSplitByLen) & !is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
+  group_by(author, lexicalType, sentLength, lexicalIndex) %>%
+  mutate(diffScoreSplit = score.postSplitByLen - score.preSplitByLen) %>%
+  summarise(avgDiffScoreSplit = mean(diffScoreSplit)) %>%
+  group_by(lexicalType) %>%
+  summarise(mean = mean(avgDiffScoreSplit),
+            se = sd(avgDiffScoreSplit)/sqrt(n()))
+
 graph.afterBeforeDiff <- df.final %>%
+  filter(!is.na(score.postSplitByLen) & !is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   mutate(diffScoreSplit = score.postSplitByLen - score.preSplitByLen) %>%
   summarise(avgDiffScoreSplit = mean(diffScoreSplit)) %>%
   ggplot(aes(x=lexicalType, y=avgDiffScoreSplit)) +
   geom_violin() +
+  geom_errorbar(aes(y=mean, min=mean-se, max=mean+se), width=0.1, data=diffUmm.summ) +
+  scale_x_discrete("") +
+  scale_y_continuous("Suprisal / Sentence Length") +
   ggtitle("Avg Difference (Post-Pre)-Umm Surprisal by Umm vs Control")
 graph.afterBeforeDiff
-
+ggsave("img/prePostDiffUmmSurprisal.png",graph.afterBeforeDiff)
 
 df.final %>%
   filter(!is.na(score.postSplitByLen) & !is.na(score.preSplitByLen) & lexicalIndex > 1) %>%
@@ -247,23 +292,25 @@ graph.preVsPost <- df.final %>%
   ggplot(aes(x=avgPreSplitScoreByLen, y=avgPostSplitScoreByLen)) +
   geom_point() +
   facet_wrap(~lexicalType)
-ggsave("graph.preVsPost.png")
+ggsave("img/preVsPost.png")
 ```
 
 ```{r}
-grid.arrange(graph.sent +
+allgraphs <- grid.arrange(graph.sent +
                ggtitle("Avg Sentence") + 
-               scale_y_continuous(limits=c(-4,9)),
+               scale_y_continuous(limits=c(-30,40)),
              graph.beforeUmm +
                ggtitle("Avg Pre-Umm") +
-               scale_y_continuous(limits=c(-4,9)), 
+               scale_y_continuous(limits=c(-30,40)), 
              graph.afterUmm + 
                ggtitle("Avg Post-Umm") +
-               scale_y_continuous(limits=c(-4,9)), 
+               scale_y_continuous(limits=c(-30,40)), 
              graph.afterBeforeDiff + 
-               ggtitle("Avg Difference") +
-               scale_y_continuous(limits=c(-4,9)),
+               ggtitle("Avg (Post - Pre)") +
+               scale_y_continuous(limits=c(-30,40)),
              nrow=1)
+allgraphs
+ggsave("img/sentence_pre_post_diff.png", allgraphs, width=14)
 ```
 
 
@@ -274,8 +321,9 @@ df.final %>%
   filter(lexicalType == "umm") %>%
   ggplot(aes(x=lexicalLength)) +
   geom_bar() +
-  ggtitle("Counts of Umm Length") +
-  scale_x_continuous(limits=c(2,12))
+  scale_y_continuous("Count") +
+  scale_x_continuous("Length of Umm Word", limits=c(2,12))
+ggsave("img/ummCount.png")
 ```
 
 ```{r}
@@ -285,18 +333,18 @@ multipleLexLengths <- df.final %>%
   group_by(author, lexicalType, sentLength, lexicalIndex) %>%
   mutate(sum = sum(count)) %>%
   filter(lexicalType == "umm" & count != sum) %>%
-  select(author, lexicalType, sentLength, lexicalLength) %>%
+  select(author, lexicalIndex, sentLength, lexicalLength) %>%
   group_by(author, sentLength, lexicalIndex) %>%
   summarise(lexLengths = paste(lexicalLength, collapse=","))
-  
-multLexLengthsSamples.control <- df.final %>%
-  right_join(multipleLexLengths, by=c("author","sentLength","lexicalIndex")) %>%
-  filter(lexicalType == "control") %>%
-  unique() %>%
-  mutate(lexicalLength=strsplit(lexLengths, ",")) %>%
-  unnest(lexicalLength) %>%
-  mutate(lexicalLength = as.numeric(lexicalLength)) %>%
-  select(-"lexLengths")
+
+# multLexLengthsSamples.control <- df.final %>%
+#   right_join(multipleLexLengths, by=c("author","sentLength","lexicalIndex")) %>%
+#   filter(lexicalType == "control") %>%
+#   unique() %>%
+#   mutate(lexicalLength=strsplit(lexLengths, ",")) %>%
+#   unnest(lexicalLength) %>%
+#   mutate(lexicalLength = as.numeric(lexicalLength)) %>%
+#   select(-"lexLengths")
 
 singLexLengthsSamples.umm.vectors <- df.final %>%
   anti_join(multipleLexLengths, by=c("author","sentLength","lexicalIndex")) %>%
@@ -311,7 +359,8 @@ singLexLengthsSamples.control <- df.final %>%
 
 df.ummLength <- df.final %>%
   filter(lexicalType == "umm") %>%
-  bind_rows(multLexLengthsSamples.control, singLexLengthsSamples.control) %>%
+  #bind_rows(multLexLengthsSamples.control, singLexLengthsSamples.control) %>%
+  bind_rows(singLexLengthsSamples.control) %>%
   mutate(excludeUmm = score.preSplit + score.postSplit,
          excludeUmmByLen = excludeUmm / sentLength)
 

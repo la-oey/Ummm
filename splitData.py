@@ -20,11 +20,11 @@ author_testing = dict()
 filenames = dict()
 
 # proportion of data in each set
-p_train = 0.315
-p_train_v = 0.0175
-p_train_t = 0.0175
-p_validate = 0.35
-p_test = 0.30
+p_train = 0.08
+p_train_v = 0.01
+p_train_t = 0.01
+p_validate = 0.45
+p_test = 0.45
 
 def main():
     start_time = time.time()

@@ -13,9 +13,12 @@ import csv
 csv.field_size_limit(sys.maxsize)
 from nltk.tokenize import RegexpTokenizer
 from HTMLParser import HTMLParser
-import langid
+#import langid
+from pyfasttext import FastText
+model = FastText('lid.176.ftz')
 
-tokenizer = RegexpTokenizer(r'\w+')
+
+#tokenizer = RegexpTokenizer(r'\w+')
 pattern_http = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 pattern_www = re.compile('www.(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 pattern_ = re.compile('_*')
@@ -41,14 +44,14 @@ def main():
                 print(r['filename'])
             text = r['text']
             author = r['author']
-            if (text not in ["NA", "[deleted]", "[removed]"]) and (author not in ["[deleted]", "autotldr", "peterboykin", "censorship_notifier", "AutoModerator", "subredditreports", "scamcop"]) and (author not in botdict) and not re.match("^.+(bot)$", r['author'], re.IGNORECASE) and (langid.classify(text)[0] == "en"): #removes deleted comments
+            if (text not in ["NA", "[deleted]", "[removed]"]) and (author not in ["[deleted]", "autotldr", "peterboykin", "censorship_notifier", "AutoModerator", "subredditreports", "scamcop"]) and (author not in botdict) and not re.match("^.+(bot)$", r['author'], re.IGNORECASE) and len(model.predict_proba_single(text, k=1)) > 0 and (model.predict_proba_single(text, k=1)[0][0] == "en"): #removes deleted comments
                 text = pattern_http.sub('', text)
                 text = pattern_www.sub('', text)
                 text = pattern_.sub('', text)
                 text = HTMLParser().unescape(text)
                 
-                cleaned_arr = tokenizer.tokenize(text.lower())
-                cleaned = ' '.join(cleaned_arr)
+                cleaned = text
+                cleaned_arr = cleaned.split()
                     
                 writer.writerow({'filename': r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'text':cleaned, 'sentLength':len(cleaned_arr), 'timestamp': r['timestamp']})
         csv_file_w.close()
