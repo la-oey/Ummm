@@ -48,7 +48,7 @@ def main():
                 totalSentences = totalSentences + 1
                 totalWords = totalWords + int(r['sentLength'])
                 # checks for word match to umm and checks that sentence contains more than one word
-                if any(re.match("^([,.!?\\-\\(\\)]*)u(h+|m)m+([,.!?\\-\\(\\)]*)$", x, re.IGNORECASE) for x in r['text'].split()) and int(r['sentLength']) > 1:
+                if any(re.match("^([\\W]*)u(h+|m)m+([\\W]*)$", x, re.IGNORECASE) for x in r['text'].split()) and int(r['sentLength']) > 1:
                     ummSentences = ummSentences + 1
 
                     # loops through each word in the sentence and finds the word match
@@ -60,7 +60,7 @@ def main():
                     lexIndices =[]
                     newSent = []
                     for w in r['text'].split():
-                        if re.match("^([,.!?\\-\\(\\)]*)u(h+|m)m+([,.!?\\-\\(\\)]*)$", w, re.IGNORECASE):
+                        if re.match("^([\\W]*)u(h+|m)m+([\\W]*)$", w, re.IGNORECASE):
                             cleanW = re.sub(r"[^\w\s]", "", w)
                             lexItems.append(cleanW)
                             lexLengths.append(len(cleanW))
