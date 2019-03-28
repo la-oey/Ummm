@@ -19,16 +19,20 @@ model_train_end_time = time.time()
 model_train_time = model_train_end_time - start_time
 
 def main():
-	with open('postExtract/sample_'+sys.argv[1]+'.csv', 'r') as csv_file_r:
+	if sys.argv[2] == "w":
+		read_file = 'postExtract/wUmm/sample_'+sys.argv[1]+'.csv'
+	elif sys.argv[2] == "wo":
+		read_file = 'postExtract/woUmm/sample_'+sys.argv[1]+'.csv'
+	with open(read_file, 'r') as csv_file_r:
 		csv_file_w = open('umm_kenlm_output_'+sys.argv[1]+'.csv', 'w')
 		reader = csv.DictReader(csv_file_r)
 		fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'originalText', 'text', 'sentLength', 'timestamp', 'sentScore', 'fullScores']
 		writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
 		writer.writeheader()
 
-		if sys.argv[2] == "crawl":
+		if sys.argv[3] == "crawl":
 			model = kenlm.LanguageModel('../en.trie')
-		elif sys.argv[2] == "reddit":
+		elif sys.argv[3] == "reddit":
 			model = kenlm.LanguageModel('../kenlm/build/reddit.binary')
 		#sentence = 'this is a sentence .'
 		#print(model.score(sentence))
