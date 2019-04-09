@@ -19,7 +19,7 @@ def main():
 	start_time = time.time()
 	read_file = 'split/'+sys.argv[1]+'_allFiles'
 	with open(read_file+'_full.csv', 'r') as csv_file_r_full:
-		csv_file_r_txt = open('split/text_cleaned.csv', 'r')
+		csv_file_r_txt = open(read_file+'_cleaned.csv', 'r')
 		reader = csv.DictReader(csv_file_r_full)
 		reader_txt = csv.DictReader(csv_file_r_txt)
 		csv_file_w = open(read_file+'_concat.csv', 'w')
