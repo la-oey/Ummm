@@ -10,6 +10,7 @@ import time
 import re
 import sys
 import csv
+import string
 csv.field_size_limit(sys.maxsize)
 import nltk
 from nltk import word_tokenize
@@ -27,15 +28,12 @@ def main():
     controlSentences = 0
     ummWithControlSentences = 0
 
-    if sys.argv[1] == "all":
-    	fileR_name = 'preprocessed/processed_allFiles.csv'
-    else:
-    	fileR_name = 'split/'+sys.argv[1]+'_allFiles.csv'
+    fileR_name = 'split/'+sys.argv[1]+'_allFiles_concat.csv'
 
     with open(fileR_name, 'r') as csv_file_r:
         csv_file_w = open('postExtract/woUmm/sample_'+sys.argv[1]+'.csv', 'w')
         reader = csv.DictReader(csv_file_r)
-        fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'originalText', 'text', 'sentLength', 'timestamp']
+        fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'originalText', 'cleanedText', 'text', 'sentLength', 'timestamp']
         writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
         writer.writeheader()
         meta_file = open('postExtract/woUmm/metadata_'+sys.argv[1]+'.txt', 'w')
@@ -44,11 +42,21 @@ def main():
             if r['filename'] not in filenames:
                 filenames[r['filename']] = [r['filename']]
                 print(r['filename'])
-            if r['sentLength'] != None:
+
+            # recompute sentence length without punctuation
+            #noPunct = r['text'].translate(str.maketrans(string.punctuation, ' '*len(string.punctuation)))
+            sentLength = len(r['cleanedText'].split())
+
+            if sentLength != None:
                 totalSentences = totalSentences + 1
-                totalWords = totalWords + int(r['sentLength'])
+                totalWords = totalWords + sentLength
+
+                # temp sentence that adds spacing between all punctuation
+                #punctSent = re.sub("([\\W])",r" \1 ",r['text'])
+                #punctSent = punctSent.trim()
+
                 # checks for word match to umm and checks that sentence contains more than one word
-                if any(re.match("^([\\W]*)u(h+|m)m+([\\W]*)$", x, re.IGNORECASE) for x in r['text'].split()) and int(r['sentLength']) > 1:
+                if any(re.match("^u(h+|m)m+$", x, re.IGNORECASE) for x in r['cleanedText'].split()) and sentLength > 1:
                     ummSentences = ummSentences + 1
 
                     # loops through each word in the sentence and finds the word match
@@ -59,38 +67,37 @@ def main():
                     lexLengths =[]
                     lexIndices =[]
                     newSent = []
-                    for w in r['text'].split():
-                        if re.match("^([\\W]*)u(h+|m)m+([\\W]*)$", w, re.IGNORECASE):
-                            cleanW = re.sub(r"[^\w\s]", "", w)
-                            lexItems.append(cleanW)
-                            lexLengths.append(len(cleanW))
+                    for w in r['cleanedText'].split():
+                        if re.match("^u(h+|m)m+$", w, re.IGNORECASE):
+                            lexItems.append(w)
+                            lexLengths.append(len(w))
                             lexIndices.append(ind)
                             ummWords = ummWords + 1
                         else:
                             newSent.append(w)
+
                         ind = ind + 1
                     newSentAsString = " ".join(newSent)
                     for i in range(0,len(lexItems)):
-                        writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'umm', 'lexicalItem':lexItems[i], 'lexicalLength':lexLengths[i], 'lexicalIndex':lexIndices[i], 'originalText':r['text'], 'text':newSentAsString, 'sentLength':int(r['sentLength'])-len(lexItems), 'timestamp':r['timestamp']})
+                        writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'umm', 'lexicalItem':lexItems[i], 'lexicalLength':lexLengths[i], 'lexicalIndex':lexIndices[i], 'originalText':r['text'], 'cleanedText':r['cleanedText'], 'text':newSentAsString, 'sentLength':sentLength-len(lexItems), 'timestamp':r['timestamp']})
 
                     # checks if comment author exists as an entry in dictionary of authors
                     # if author does not exist, create an entry & sets value to an array containing the length of the sentence
                     if r['author'] not in authors:
-                        authors[r['author']] = [str(int(r['sentLength'])-len(lexItems))]
+                        authors[r['author']] = [str(sentLength-len(lexItems))]
                     # if author does exists, but length of sentence is not contained within the array of sentence lengths, adds the length to the array
-                    elif r['sentLength'] not in authors[r['author']]:
-                        authors[r['author']].append(str(int(r['sentLength'])-len(lexItems)))
-                                
+                    elif str(sentLength) not in authors[r['author']]:
+                        authors[r['author']].append(str(sentLength-len(lexItems)))           
 
                 # collects controls
                 # checks among non-umm containing sentences if author entry exists and sentence length is contained within the array
-                elif r['author'] in authors and r['sentLength'] in authors[r['author']]:
+                elif r['author'] in authors and str(sentLength) in authors[r['author']]:
                     controlSentences = controlSentences + 1
-                    authorLength = r['author'] + ',' + r['sentLength']
+                    authorLength = r['author'] + ',' + str(sentLength)
                     if authorLength not in ummControl:
                         ummWithControlSentences = ummWithControlSentences + 1
                         ummControl[authorLength] = [authorLength]
-                    writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'lexicalIndex':'NA', 'originalText':'NA', 'text':r['text'], 'sentLength':r['sentLength'], 'timestamp':r['timestamp']})
+                    writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'lexicalIndex':'NA', 'originalText':r['text'], 'cleanedText':r['cleanedText'], 'text':r['cleanedText'], 'sentLength':sentLength, 'timestamp':r['timestamp']})
 
         meta_file.write('Total Words in File: ' + str(totalWords) + "\n")
         meta_file.write("Umm Words in Files: " + str(ummWords) + "\n")

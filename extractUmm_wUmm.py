@@ -10,6 +10,7 @@ import time
 import re
 import sys
 import csv
+import string
 csv.field_size_limit(sys.maxsize)
 import nltk
 from nltk import word_tokenize
@@ -27,10 +28,7 @@ def main():
     controlSentences = 0
     ummWithControlSentences = 0
 
-    if sys.argv[1] == "all":
-    	fileR_name = 'preprocessed/processed_allFiles.csv'
-    else:
-    	fileR_name = 'split/'+sys.argv[1]+'_allFiles.csv'
+    fileR_name = 'split/'+sys.argv[1]+'_allFiles_concat.csv'
 
     with open(fileR_name, 'r') as csv_file_r:
         csv_file_w = open('postExtract/wUmm/sample_'+sys.argv[1]+'.csv', 'w')
@@ -44,11 +42,22 @@ def main():
             if r['filename'] not in filenames:
                 filenames[r['filename']] = [r['filename']]
                 print(r['filename'])
-            if r['sentLength'] != None:
+
+            # recompute sentence length without punctuation
+            #noPunct = r['text'].translate(str.maketrans(string.punctuation, ' '*len(string.punctuation)))
+            sentLength = len(r['cleanedText'].split())
+
+            if sentLength != None:
                 totalSentences = totalSentences + 1
-                totalWords = totalWords + int(r['sentLength'])
+                totalWords = totalWords + sentLength
+
+                # temp sentence that adds spacing between all punctuation
+                #punctSent = re.sub("([\\W])",r" \1 ",r['text'])
+                #punctSent = punctSent.trim()
+                #punctSent = re.sub("\\s{2,}"," ",punctSent)
+
                 # checks for word match to umm and checks that sentence contains more than one word
-                if any(re.match("^([\\W]*)u(h+|m)m+([\\W]*)$", x, re.IGNORECASE) for x in r['text'].split()) and int(r['sentLength']) > 1:
+                if any(re.match("^u(h+|m)m+$", x, re.IGNORECASE) for x in r['cleanedText'].split()) and sentLength > 1:
                     ummSentences = ummSentences + 1
 
                     # loops through each word in the sentence and finds the word match
@@ -56,14 +65,13 @@ def main():
                     # records a row in the csv for each word match
                     ind = 0
                     lexItems = []
-                    lexLengths =[]
-                    lexIndices =[]
+                    lexLengths = []
+                    lexIndices = []
                     newSent = []
-                    for w in r['text'].split():
-                        if re.match("^([\\W]*)u(h+|m)m+([\\W]*)$", w, re.IGNORECASE):
-                            cleanW = re.sub(r"[^\w\s]", "", w)
-                            lexItems.append(cleanW)
-                            lexLengths.append(len(cleanW))
+                    for w in r['cleanedText'].split():
+                        if re.match("^u(h+|m)m+$", w, re.IGNORECASE):
+                            lexItems.append(w)
+                            lexLengths.append(len(w))
                             lexIndices.append(ind)
                             ummWords = ummWords + 1
                         else:
@@ -71,26 +79,25 @@ def main():
                         ind = ind + 1
                     newSentAsString = " ".join(newSent)
                     for i in range(0,len(lexItems)):
-                        writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'umm', 'lexicalItem':lexItems[i], 'lexicalLength':lexLengths[i], 'lexicalIndex':lexIndices[i], 'text':r['text'], 'newText':newSentAsString, 'sentLength':int(r['sentLength']), 'timestamp':r['timestamp']})
+                        writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'umm', 'lexicalItem':lexItems[i], 'lexicalLength':lexLengths[i], 'lexicalIndex':lexIndices[i], 'text':r['text'], 'cleanedText':r['cleanedText'], 'newText':newSentAsString, 'sentLength':sentLength, 'timestamp':r['timestamp']})
 
                     # checks if comment author exists as an entry in dictionary of authors
                     # if author does not exist, create an entry & sets value to an array containing the length of the sentence
                     if r['author'] not in authors:
-                        authors[r['author']] = [str(int(r['sentLength']))]
+                        authors[r['author']] = [str(sentLength)]
                     # if author does exists, but length of sentence is not contained within the array of sentence lengths, adds the length to the array
-                    elif r['sentLength'] not in authors[r['author']]:
-                        authors[r['author']].append(str(int(r['sentLength'])))
-                                
+                    elif str(sentLength) not in authors[r['author']]:
+                        authors[r['author']].append(str(sentLength))
 
                 # collects controls
                 # checks among non-umm containing sentences if author entry exists and sentence length is contained within the array
-                elif r['author'] in authors and r['sentLength'] in authors[r['author']]:
+                elif r['author'] in authors and str(sentLength) in authors[r['author']]:
                     controlSentences = controlSentences + 1
-                    authorLength = r['author'] + ',' + r['sentLength']
+                    authorLength = r['author'] + ',' + str(sentLength)
                     if authorLength not in ummControl:
                         ummWithControlSentences = ummWithControlSentences + 1
                         ummControl[authorLength] = [authorLength]
-                    writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'lexicalIndex':'NA', 'text':r['text'], 'newText':'NA', 'sentLength':r['sentLength'], 'timestamp':r['timestamp']})
+                    writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'lexicalIndex':'NA', 'text':r['text'], 'cleanedText':r['cleanedText'], 'newText':'NA', 'sentLength':sentLength, 'timestamp':r['timestamp']})
 
         meta_file.write('Total Words in File: ' + str(totalWords) + "\n")
         meta_file.write("Umm Words in Files: " + str(ummWords) + "\n")
