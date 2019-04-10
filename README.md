@@ -25,6 +25,7 @@ Test Files - to check run time with subset of data (directories not currently ex
 * Requires nltk
 * Writes to a CSV file in a directory called "rawtxt"; the created CSV file's name is "raw_[XXX].csv" (e.g. "rawtxt/raw_txtFiles1.csv")
 >\>\>\> python extractRawTxt.py [XXX]
+
 XXX = txtFiles{0, 1, 2, 3}
 CSV file: {
 	filename,
