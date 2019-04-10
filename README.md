@@ -46,7 +46,7 @@ CSV file: {
 * Reads in "lid.176.ftz" (for pyfasttext)
 * Requires nltk, HTMLParser, pyfasttext
 * Writes to a CSV file in a directory called "preprocessed"; the created CSV file's name is "processed_XXX.csv" (e.g. "preprocessed/processed_txtFiles1.csv")
->>> python preprocessingTraining.py [XXX]
+\>\>\> python preprocessingTraining.py [XXX]
 - Excludes sentences with "NA", "[deleted], "[removed]" as the text
 - Excludes authors named "[deleted]", "autotldr", "peterboykin", "censorship_notifier", "AutoModerator", "subredditreports", and "scamcop"
 - Excludes (bot) authors listed in "redditbots.txt"
@@ -83,7 +83,7 @@ CSV file: {
 (6a) writeTrainingTxt_kenlm.py - If training the LM on your own data, extracts text in training CSV file to text file
 * Reads in "split/training_allFiles.csv" (output from 5)
 * Writes to text file "trainingTxt_allFiles.txt"
->>> python writeTrainingTxt_kenlm.py
+\>\>\> python writeTrainingTxt_kenlm.py
 - Extracts vector containing the relevant text in the training CSV file
 - Writes each sentence to the text file, separated by a newline
 - Then preprocess using kenlm_prepro
