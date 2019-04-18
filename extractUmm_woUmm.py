@@ -46,7 +46,8 @@ def main():
 
             # recompute sentence length without punctuation
             #noPunct = r['text'].translate(str.maketrans(string.punctuation, ' '*len(string.punctuation)))
-            sentLength = len(r['cleanedText'].split())
+            sentSplit = r['cleanedText'].split()
+            sentLength = len(sentSplit)
 
             if sentLength != None:
                 totalSentences = totalSentences + 1
