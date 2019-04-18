@@ -22,6 +22,7 @@ filenames = dict()
 def main():
     start_time = time.time()
     totalWords = 0
+    punct = 0
     ummWords = 0
     totalSentences = 0
     ummSentences = 0
@@ -50,6 +51,12 @@ def main():
             if sentLength != None:
                 totalSentences = totalSentences + 1
                 totalWords = totalWords + sentLength
+                apos = r['cleanedText'].count("&apos;") #exclude apostrophes
+                punctCount = -apos
+                for i in sentSplit:
+                    if any(x in i for x in string.punctuation):
+                        punctCount = punctCount + 1
+                punct = punct + punctCount
 
                 # temp sentence that adds spacing between all punctuation
                 #punctSent = re.sub("([\\W])",r" \1 ",r['text'])
@@ -100,6 +107,7 @@ def main():
                     writer.writerow({'filename':r['filename'], 'author':r['author'], 'subreddit':r['subreddit'], 'title':r['title'], 'lexicalType':'control', 'lexicalItem':'NA', 'lexicalLength':'NA', 'lexicalIndex':'NA', 'originalText':r['text'], 'cleanedText':r['cleanedText'], 'text':r['cleanedText'], 'sentLength':sentLength, 'timestamp':r['timestamp']})
 
         meta_file.write('Total Words in File: ' + str(totalWords) + "\n")
+        meta_file.write('Punctuation in File: ' + str(punct) + "\n")
         meta_file.write("Umm Words in Files: " + str(ummWords) + "\n")
         meta_file.write('Total Sentences in File: ' + str(totalSentences) + "\n")
         meta_file.write('Umm Sentences in File: ' + str(ummSentences) + "\n")
@@ -108,6 +116,6 @@ def main():
         meta_file.close()
         csv_file_w.close()
         csv_file_r.close()
-    print("extractUmm.py Run Time: " + str(time.time()-start_time) + " seconds")
+    print("extractUmm_woUmm.py Run Time: " + str(time.time()-start_time) + " seconds")
 
 main()
