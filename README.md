@@ -249,7 +249,7 @@ To download pretrained LM:
 - Extracts vector containing the relevant text in the training CSV file
 - Writes each sentence to the text file, separated by a newline
 
-(7b) awd-lstm-lm - Builds character level long short-tern memory network (LSTM) language model
+(7b) awd-lstm-lm - Builds character level long short-term memory network (LSTM) language model
 * Reads in "redditTrain/" created in (8a) from its directory
 * Requires PyTorch 0.4
 * Writes binary file that can be used to query the model
@@ -268,6 +268,11 @@ NOTE: NEEDS TO BE ADJUSTED
 * Reads in directory "data/enwik8/"
 * Writes to "ENWIK8.pt", "ENWIK8.pt.e25", "ENWIK8.pt.e35"
 >\>\>\> ../anaconda3/bin/python3 -u main.py --epochs 50 --nlayers 3 --emsize 400 --nhid 1840 --alpha 0 --beta 0 --dropoute 0 --dropouth 0.1 --dropouti 0.1 --dropout 0.4 --wdrop 0.2 --wdecay 1.2e-6 --bptt 200 --batch_size 128 --optimizer adam --lr 1e-3 --data data/enwik8 --save ENWIK8.pt --when 25 35
+
+(7c) awd-lstm-lm_prepro.py - Preprocesses text in the method used by awd-lstm-lm (see https://github.com/salesforce/awd-lstm-lm/blob/master/data/enwik8/prep_enwik8.py)
+* Reads in the name YYY, where YYY = {training, training_valid, training_test, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
+* Writes to CSV file in the "split/" directory, i.e. "split/[YYY]_allFiles_awdPrePro.csv" (e.g. "split/testing_allFiles_awdPrePro.csv")
+- Tokenizes words into individual characters
 
 
 # Data Analysis #
