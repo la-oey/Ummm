@@ -28,7 +28,10 @@ def main():
     controlSentences = 0
     ummWithControlSentences = 0
 
-    fileR_name = 'split/'+sys.argv[1]+'_allFiles_concat.csv'
+    if sys.argv[2] == "kenlm":
+        fileR_name = 'split/'+sys.argv[1]+'_allFiles_concat.csv'
+    elif sys.argv[2] == "lstm":
+        fileR_name = 'split/'+sys.argv[1]+'_allFiles_awdPrePro.csv'
 
     with open(fileR_name, 'r') as csv_file_r:
         csv_file_w = open('postExtract/woUmm/sample_'+sys.argv[1]+'.csv', 'w')

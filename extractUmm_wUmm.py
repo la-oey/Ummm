@@ -18,7 +18,7 @@ from nltk import word_tokenize
 authors = dict()
 ummControl = dict()
 filenames = dict()
-count = lambda l1,l2: sum([1 for x in l1 if x in l2])
+#count = lambda l1,l2: sum([1 for x in l1 if x in l2])
 
 def main():
     start_time = time.time()
@@ -29,15 +29,18 @@ def main():
     controlSentences = 0
     ummWithControlSentences = 0
 
-    fileR_name = 'split/'+sys.argv[1]+'_allFiles_concat.csv'
+    if sys.argv[2] == "kenlm":
+    	fileR_name = 'split/'+sys.argv[1]+'_allFiles_concat.csv'
+    elif sys.argv[2] == "lstm":
+    	fileR_name = 'split/'+sys.argv[1]+'_allFiles_awdPrePro.csv'
 
     with open(fileR_name, 'r') as csv_file_r:
-        csv_file_w = open('postExtract/wUmm/sample2_'+sys.argv[1]+'.csv', 'w')
+        csv_file_w = open('postExtract/wUmm/sample_'+sys.argv[1]+'.csv', 'w')
         reader = csv.DictReader(csv_file_r)
         fieldnames = ['filename', 'author', 'subreddit', 'title', 'lexicalType', 'lexicalItem', 'lexicalLength', 'lexicalIndex', 'text', 'cleanedText', 'newText', 'sentLength', 'timestamp']
         writer = csv.DictWriter(csv_file_w, fieldnames=fieldnames)
         writer.writeheader()
-        meta_file = open('postExtract/wUmm/metadata2_'+sys.argv[1]+'.txt', 'w')
+        meta_file = open('postExtract/wUmm/metadata_'+sys.argv[1]+'.txt', 'w')
         
         for r in reader:
             if r['filename'] not in filenames:
