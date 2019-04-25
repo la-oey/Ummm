@@ -26,19 +26,8 @@ def main():
             if r['filename'] not in filenames:
                 filenames[r['filename']] = [r['filename']]
                 print(r['filename'])
-
-            newSentAsString = ""
-            cleaned = tokenizer.tokenize(r['text'].lower())
-            if any(re.match("^umm+$", x) for x in cleaned):
-                newSent = []
-                for w in cleaned: 
-                    if not re.match("^umm+$", w):
-                        newSent.append(w)
-                newSentAsString = " ".join(newSent)
-            else:
-            	newSentAsString = " ".join(cleaned)
             
-            training_file.write(newSentAsString + "\n")
+            training_file.write(r['text'] + "\n")
         training_file.close()
         csv_file_r.close()
     print("writeTrainingTxt_kenlm.py Run Time: " + str(time.time()-start_time) + " seconds")

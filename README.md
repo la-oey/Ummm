@@ -225,9 +225,9 @@ CSV file: {
 	timestamp: from (1)}
 
 (7g) test_kenlm.py - Queries language model for surprisal with critical "umm"-containing and control sentences
-* Reads in "postExtract/sample_[YYY].csv" created in (6a) (e.g. "postExtract/wUmm/sample_testing.csv") or (6b) (e.g. "postExtract/woUmm/sample_testing.csv")
+* Reads in "postExtract/sample_[YYY].csv" created in (7a) (e.g. "postExtract/wUmm/sample_testing.csv") or (7b) (e.g. "postExtract/woUmm/sample_testing.csv")
 * Requires kenlm python package
-* Either queries the data extracted with ("w") umm (6a) or without ("wo") umm (6b) AAA = {w, wo}
+* Either queries the data extracted with ("w") umm (7a) or without ("wo") umm (7b) AAA = {w, wo}
 * Either queries reddit-trained or CommonCrawl-trained data BBB = {reddit, crawl}
 * Writes to a CSV file "umm_kenlm_output_[YYY].csv"
 >\>\>\> python test_kenlm.py [YYY] [AAA] [BBB]
@@ -249,12 +249,12 @@ To download pretrained LM:
 # LSTM: LM trained on reddit data or trained on enwik-8 #
 
 (8a) writeTrainingTxt_lstm.py - If training the LM on your own data, extracts text in training CSV file to text file
-* Reads in "split/[YYY]_allFiles.csv" where YYY = {"training", "training_valid", "training_test"} (output from 5)
+* Reads in "split/training_train_allFiles.csv", "split/training_valid_allFiles.csv", "split/training_test_allFiles.csv" (output from 6)
 * Writes to a text file {"train.txt", "valid.txt", "test.txt"} in the "redditTrain/" directory (e.g. "redditTrain/test.txt")
->\>\>\> python writeTrainingTxt_lstm.py [YYY]
+>\>\>\> python writeTrainingTxt_lstm.py
 
 - Extracts vector containing the relevant text in the training CSV file
-- Writes each sentence to the text file, separated by a newline
+- Writes each sentence (formatted for character-level lstm) to the text file, separated by a newline
 
 (8b) awd-lstm-lm - Builds character level long short-term memory network (LSTM) language model
 * Reads in "redditTrain/" created in (8a) from its directory

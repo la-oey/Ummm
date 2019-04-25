@@ -16,32 +16,20 @@ filenames = dict()
 
 def main():
     start_time = time.time()
-    with open('split/'+sys.argv[1]+'_allFiles.csv', 'r') as csv_file_r:
-        if sys.argv[1] == "training":
-            name = "train"
-        elif sys.argv[1] == "training_valid":
-            name = "valid"
-        else:
-            name = "test"
-        training_file = open('redditTrain/'+name+'.txt', 'w')
-        reader = csv.DictReader(csv_file_r)
-        for r in reader:
-            if r['filename'] not in filenames:
-                filenames[r['filename']] = [r['filename']]
-                print(r['filename'])
+    for i in ["train", "valid", "test"]:
+    	with open('split/training_'+i+'_allFiles.csv', 'r') as csv_file_r:
+	        training_file = open('redditTrain/'+i+'.txt', 'w')
+	        reader = csv.DictReader(csv_file_r)
+	        for r in reader:
+	            if r['filename'] not in filenames:
+	                filenames[r['filename']] = [r['filename']]
+	                print(r['filename'])
 
-            newSentAsString = ""
-            if any(re.match("^umm+$", x) for x in r['text'].split()):
-                newSent = []
-                for w in r['text'].split(): 
-                    if not re.match("^umm+$", w):
-                        newSent.append(w)
-                newSentAsString = " ".join(newSent)
-            else:
-            	newSentAsString = r['text']
-            training_file.write(newSentAsString + "\n")
-        training_file.close()
-        csv_file_r.close()
+	            newSentAsString = ' '.join([str(c) if c != ord('\n') else '\n' for c in r['text']])
+	            training_file.write(newSentAsString + "\n")
+	        training_file.close()
+	        csv_file_r.close()
+    
     print("writeTrainingTxt_lstm.py Run Time: " + str(time.time()-start_time) + " seconds")
 
 main()
