@@ -69,6 +69,11 @@ CSV file: {
 - Writes header of the first file in the directory
 - Concatenates all of the rows from the CSV files into a single CSV file
 
+(5) removePunctuation.py - Removes punctuation and makes all characters lowercase
+* Reads in "preprocessed/processed_allFiles.csv"
+* Writes to a CSV files called "preprocessed/noPunct_allFiles.csv"
+>\>\>\> python removePunctuation.py
+
 (5) splitData.py - Splits data into 3 mutually exclusive sets {training (~8\%), training_valid (~1\%), training_test (~1\%), validation (~45\%), testing (~45\%)} by author
 * Reads in the "preprocessed/processed_allFiles.csv", created in (4)
 * Writes to 5 CSV files: "split/training_allFiles.csv", "split/training_valid_allFiles.csv", "split/training_test_allFiles.csv", "split/validation_allFiles.csv", "split/testing_allFiles.csv"
@@ -150,11 +155,12 @@ YYY = {training, training_valid, training_test, validation, testing}
 - Concatenates files into a single file
 
 (6f(a)) extractUmm_wUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
-* Reads in the name YYY, where YYY = {training, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
+* Reads in the name YYY, where YYY = {training, validation, testing}, which allows the python code to read in the output from (6e), i.e. "split/[YYY]_allFiles_{concat,awdPrepro}.csv" (e.g. "split/testing_allFiles_{concat,awdPrepro}.csv")
+* Reads in the name ZZZ, where ZZZ = {kenlm, lstm}, which allows the python code to read in the output from (6e or 7c) (if ZZZ = kenlm, reads from "split/[YYY]_allFiles_concat.csv"; if ZZZ = lstm, reads from "split/[YYY]_allFiles_awdPrePro.csv")
 * Requires nltk
 * Writes to a CSV file in a directory called "postExtract/wUmm/"; the created CSV file's name is "sample_[YYY].csv" (e.g. "postExtract/wUmm/sample_testing.csv")
 * Writes to a .txt file in the "postExtract/wUmm/" directory; the created .txt file's name is "metadata_[YYY].txt" (e.g. "postExtract/wUmm/metadata_testing.csv")
->\>\>\> python extractUmm_wUmm.py [YYY]
+>\>\>\> python extractUmm_wUmm.py [YYY] [ZZZ]
 
 YYY = {training, training_valid, training_test, validation, testing}
 - Re-computes sentence length (without punctuation), which prevents issues of "a...b" counting as one word
@@ -185,7 +191,8 @@ CSV file: {
 	timestamp: from (1)}
 
 (6f(b)) extractUmm_woUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
-* Reads in the name YYY (in quotes), where YYY = {training, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
+* Reads in the name YYY, where YYY = {training, validation, testing}, which allows the python code to read in the output from (6e), i.e. "split/[YYY]_allFiles_{concat,awdPrepro}.csv" (e.g. "split/testing_allFiles_{concat,awdPrepro}.csv")
+* Reads in the name ZZZ, where ZZZ = {kenlm, lstm}, which allows the python code to read in the output from (6e or 7c) (if ZZZ = kenlm, reads from "split/[YYY]_allFiles_concat.csv"; if ZZZ = lstm, reads from "split/[YYY]_allFiles_awdPrePro.csv")
 * Requires nltk
 * Writes to a CSV file in a directory called "postExtract/woUmm/"; the created CSV file's name is "sample_[YYY].csv" (e.g. "postExtract/woUmm/sample_testing.csv")
 * Writes to a .txt file in the "postExtract/woUmm/" directory; the created .txt file's name is "metadata_[YYY].txt" (e.g. "postExtract/woUmm/metadata_testing.csv")
@@ -273,6 +280,8 @@ NOTE: NEEDS TO BE ADJUSTED
 * Reads in the name YYY, where YYY = {training, training_valid, training_test, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
 * Writes to CSV file in the "split/" directory, i.e. "split/[YYY]_allFiles_awdPrePro.csv" (e.g. "split/testing_allFiles_awdPrePro.csv")
 - Tokenizes words into individual characters
+
+(7d(a)) and (7d(b)) - See (6f(a)) or (6f(b))
 
 
 # Data Analysis #
