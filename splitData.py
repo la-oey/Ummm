@@ -13,23 +13,26 @@ import random
 csv.field_size_limit(sys.maxsize)
 
 author_training = dict()
-author_training_v = dict()
-author_training_t = dict()
+author_training_tr = dict()
+author_training_va = dict()
+author_training_te = dict()
 author_validation = dict()
 author_testing = dict()
 filenames = dict()
 
 # proportion of data in each set
-p_train = 0.08
-p_train_v = 0.01
-p_train_t = 0.01
-p_validate = 0.45
-p_test = 0.45
+p_train = 0.3
+p_train_tr = 0.08
+p_train_va = 0.01
+p_train_te = 0.01
+p_validate = 0.35
+p_test = 0.35
 
 def main():
     start_time = time.time()
-    with open('preprocessed/processed_allFiles.csv', 'r') as csv_file_r:
+    with open('preprocessed/noPunct_allFiles.csv', 'r') as csv_file_r:
         training_file = open('split/training_allFiles.csv', 'w')
+        training_train_file = open('split/training_train_allFiles.csv', 'w')
         training_valid_file = open('split/training_valid_allFiles.csv', 'w')
         training_test_file = open('split/training_test_allFiles.csv', 'w')
         validation_file = open('split/validation_allFiles.csv', 'w')
@@ -39,10 +42,12 @@ def main():
         fieldnames = ['filename', 'author', 'subreddit', 'title', 'text', 'sentLength', 'timestamp']
         training = csv.DictWriter(training_file, fieldnames=fieldnames)
         training.writeheader()
-        training_v = csv.DictWriter(training_valid_file, fieldnames=fieldnames)
-        training_v.writeheader()
-        training_t = csv.DictWriter(training_test_file, fieldnames=fieldnames)
-        training_t.writeheader()
+        training_tr = csv.DictWriter(training_train_file, fieldnames=fieldnames)
+        training_tr.writeheader()
+        training_va = csv.DictWriter(training_valid_file, fieldnames=fieldnames)
+        training_va.writeheader()
+        training_te = csv.DictWriter(training_test_file, fieldnames=fieldnames)
+        training_te.writeheader()
         validation = csv.DictWriter(validation_file, fieldnames=fieldnames)
         validation.writeheader()
         testing = csv.DictWriter(testing_file, fieldnames=fieldnames)
@@ -57,10 +62,12 @@ def main():
             
             if r['author'] in author_training:
                 training.writerow(rowinfo)
-            elif r['author'] in author_training_v:
-                training_v.writerow(rowinfo)
-            elif r['author'] in author_training_t:
-                training_t.writerow(rowinfo)
+                if r['author'] in author_training_tr:
+                    training_tr.writerow(rowinfo)
+                elif r['author'] in author_training_va:
+                    training_va.writerow(rowinfo)
+                elif r['author'] in author_training_te:
+                    training_te.writerow(rowinfo)
             elif r['author'] in author_validation:
                 validation.writerow(rowinfo)
             elif r['author'] in author_testing:
@@ -68,17 +75,19 @@ def main():
             else:
                 rand = random.random()
 
-                
                 if rand < p_train:
                     author_training[r['author']] = [r['author']]
                     training.writerow(rowinfo)
-                elif rand < (p_train + p_train_v):
-                    author_training_v[r['author']] = [r['author']]
-                    training_v.writerow(rowinfo)
-                elif rand < (p_train + p_train_v + p_train_t):
-                    author_training_t[r['author']] = [r['author']]
-                    training_t.writerow(rowinfo)
-                elif rand < (p_train + p_train_v + p_train_t + p_validate):
+                    if rand < p_train_tr:
+                        author_training_tr[r['author']] = [r['author']]
+                        training_tr.writerow(rowinfo)
+                    elif rand < (p_train_tr + p_train_va):
+                        author_training_va[r['author']] = [r['author']]
+                        training_va.writerow(rowinfo)
+                    elif rand < (p_train_tr + p_train_va + p_train_te):
+                        author_training_te[r['author']] = [r['author']]
+                        training_te.writerow(rowinfo)
+                elif rand < (p_train + p_validate):
                     author_validation[r['author']] = [r['author']]
                     validation.writerow(rowinfo)
                 else:
@@ -86,6 +95,7 @@ def main():
                     testing.writerow(rowinfo)
         csv_file_r.close()
         training_file.close()
+        training_train_file.close()
         training_valid_file.close()
         training_test_file.close()
         validation_file.close()

@@ -74,9 +74,9 @@ CSV file: {
 * Writes to a CSV files called "preprocessed/noPunct_allFiles.csv"
 >\>\>\> python removePunctuation.py
 
-(5) splitData.py - Splits data into 3 mutually exclusive sets {training (~8\%), training_valid (~1\%), training_test (~1\%), validation (~45\%), testing (~45\%)} by author
+(6) splitData.py - Splits data into 6 sets {training (~30\%) (from training, 3 further sets: training_train (~8\%), training_valid (~1\%), training_test (~1\%)), validation (~35\%), testing (~35\%)} by author
 * Reads in the "preprocessed/processed_allFiles.csv", created in (4)
-* Writes to 5 CSV files: "split/training_allFiles.csv", "split/training_valid_allFiles.csv", "split/training_test_allFiles.csv", "split/validation_allFiles.csv", "split/testing_allFiles.csv"
+* Writes to 6 CSV files: "split/training_allFiles.csv", "split/training_train_allFiles.csv", "split/training_valid_allFiles.csv", "split/training_test_allFiles.csv", "split/validation_allFiles.csv", "split/testing_allFiles.csv"
 >\>\>\> python splitData.py
 
 - Distributes first sentence by a given author into each of the sets (training, validation, test) by corresponding probability value
@@ -90,7 +90,7 @@ CSV file: {
 
 # kenlm: LM trained on reddit data or pre-trained on CommonCrawl data #
 
-(6a) writeTrainingTxt_kenlm.py - If training the LM on your own data, extracts text in training CSV file to text file
+(7a) writeTrainingTxt_kenlm.py - If training the LM on your own data, extracts text in training CSV file to text file
 * Reads in "split/training_allFiles.csv" (output from 5)
 * Writes to text file "trainingTxt_allFiles.txt"
 >\>\>\> python writeTrainingTxt_kenlm.py
@@ -102,7 +102,7 @@ CSV file: {
 
 >\>\>\> cat ../trainingTxt_allFiles.txt | ./prepro_post_dedupe_en.sh en | ./prepro_tokenize_en.sh en truecasemodels/truecase-model.en > ../trainingTxt_allFiles.txt
 
-(6b) kenlm - Builds a 5-gram language model
+(7b) kenlm - Builds a 5-gram language model
 from https://kheafield.com/code/kenlm/
 github: https://github.com/kpu/kenlm
 * Reads in "trainingTxt_allFiles.txt" created in (7a) from its directory
@@ -123,14 +123,14 @@ github: https://github.com/kpu/kenlm
 
 >\>\>\> bin/build_binary reddit.arpa reddit.binary
 
-(6c) sentToTxt.py - Extracts and creates unique corresponding indices for each sentence across two generated files
+(7c) sentToTxt.py - Extracts and creates unique corresponding indices for each sentence across two generated files
 * Reads in the name YYY, where YYY = {training, training_valid, training_test, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
 * Writes to 2 CSV files in the "split/" directory: (a) a file with all of the data, plus unique numeric indices "split/[YYY]_allFiles_full.csv" (e.g. "split/testing_allFiles_full.csv"), (b) a file with the unique indices and the text, extracted "split/[YYY]_allFiles_txt.csv" (e.g. "split/testing_allFiles_txt.csv")
 >\>\>\> python sentToTxt.py [YYY]
 
 YYY = {training, training_valid, training_test, validation, testing}
 
-(6d) kenlm_prepro - Files for kenlm preprocessing
+(7d) kenlm_prepro - Files for kenlm preprocessing
 * Reads in "split/[YYY]_allFiles_txt.csv" file from (7b)
 * Change directory to "kenlm_prepro/"
 * Writes to a CSV file after preprocessing for kenlm "../split/[YYY]_allFiles_cleaned.csv"
@@ -142,7 +142,7 @@ YYY = {training, training_valid, training_test, validation, testing}
 - Adds spacing between punctuation
 - Converts some characters to HTML character, e.g. " --> &quot;
 
-(6e) concat_kenlm_post-prepro.py - Concatenates full file from (7b) and preprocessed file from (7c)
+(7e) concat_kenlm_post-prepro.py - Concatenates full file from (7b) and preprocessed file from (7c)
 * Reads in "split/[YYY]_allFiles_full.csv" file from (7b) and "split/[YYY]_allFiles_cleaned.csv" file from (7c)
 * Change to back to "Ummm/" directory
 * Writes to a CSV file "split/[YYY]_allFiles_concat.csv"
@@ -154,7 +154,7 @@ YYY = {training, training_valid, training_test, validation, testing}
 - Works around some odd formatting issues, e.g. extra "None" columns, rows consisting of cleaned text without indices, rows with indices but no text
 - Concatenates files into a single file
 
-(6f(a)) extractUmm_wUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
+(7f(a)) extractUmm_wUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
 * Reads in the name YYY, where YYY = {training, validation, testing}, which allows the python code to read in the output from (6e), i.e. "split/[YYY]_allFiles_{concat,awdPrepro}.csv" (e.g. "split/testing_allFiles_{concat,awdPrepro}.csv")
 * Reads in the name ZZZ, where ZZZ = {kenlm, lstm}, which allows the python code to read in the output from (6e or 7c) (if ZZZ = kenlm, reads from "split/[YYY]_allFiles_concat.csv"; if ZZZ = lstm, reads from "split/[YYY]_allFiles_awdPrePro.csv")
 * Requires nltk
@@ -190,7 +190,7 @@ CSV file: {
 	sentLength: sentence length,
 	timestamp: from (1)}
 
-(6f(b)) extractUmm_woUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
+(7f(b)) extractUmm_woUmm.py - Extracts critical "umm"-containing sentences and controls and collects meta data about total and "umm" words and total, "umm"-containing, and control sentences in file
 * Reads in the name YYY, where YYY = {training, validation, testing}, which allows the python code to read in the output from (6e), i.e. "split/[YYY]_allFiles_{concat,awdPrepro}.csv" (e.g. "split/testing_allFiles_{concat,awdPrepro}.csv")
 * Reads in the name ZZZ, where ZZZ = {kenlm, lstm}, which allows the python code to read in the output from (6e or 7c) (if ZZZ = kenlm, reads from "split/[YYY]_allFiles_concat.csv"; if ZZZ = lstm, reads from "split/[YYY]_allFiles_awdPrePro.csv")
 * Requires nltk
@@ -224,7 +224,7 @@ CSV file: {
 	sentLength: sentence length minus "umm" words,
 	timestamp: from (1)}
 
-(6g) test_kenlm.py - Queries language model for surprisal with critical "umm"-containing and control sentences
+(7g) test_kenlm.py - Queries language model for surprisal with critical "umm"-containing and control sentences
 * Reads in "postExtract/sample_[YYY].csv" created in (6a) (e.g. "postExtract/wUmm/sample_testing.csv") or (6b) (e.g. "postExtract/woUmm/sample_testing.csv")
 * Requires kenlm python package
 * Either queries the data extracted with ("w") umm (6a) or without ("wo") umm (6b) AAA = {w, wo}
@@ -248,7 +248,7 @@ To download pretrained LM:
 
 # LSTM: LM trained on reddit data or trained on enwik-8 #
 
-(7a) writeTrainingTxt_lstm.py - If training the LM on your own data, extracts text in training CSV file to text file
+(8a) writeTrainingTxt_lstm.py - If training the LM on your own data, extracts text in training CSV file to text file
 * Reads in "split/[YYY]_allFiles.csv" where YYY = {"training", "training_valid", "training_test"} (output from 5)
 * Writes to a text file {"train.txt", "valid.txt", "test.txt"} in the "redditTrain/" directory (e.g. "redditTrain/test.txt")
 >\>\>\> python writeTrainingTxt_lstm.py [YYY]
@@ -256,7 +256,7 @@ To download pretrained LM:
 - Extracts vector containing the relevant text in the training CSV file
 - Writes each sentence to the text file, separated by a newline
 
-(7b) awd-lstm-lm - Builds character level long short-term memory network (LSTM) language model
+(8b) awd-lstm-lm - Builds character level long short-term memory network (LSTM) language model
 * Reads in "redditTrain/" created in (8a) from its directory
 * Requires PyTorch 0.4
 * Writes binary file that can be used to query the model
@@ -276,17 +276,17 @@ NOTE: NEEDS TO BE ADJUSTED
 * Writes to "ENWIK8.pt", "ENWIK8.pt.e25", "ENWIK8.pt.e35"
 >\>\>\> ../anaconda3/bin/python3 -u main.py --epochs 50 --nlayers 3 --emsize 400 --nhid 1840 --alpha 0 --beta 0 --dropoute 0 --dropouth 0.1 --dropouti 0.1 --dropout 0.4 --wdrop 0.2 --wdecay 1.2e-6 --bptt 200 --batch_size 128 --optimizer adam --lr 1e-3 --data data/enwik8 --save ENWIK8.pt --when 25 35
 
-(7c) awd-lstm-lm_prepro.py - Preprocesses text in the method used by awd-lstm-lm (see https://github.com/salesforce/awd-lstm-lm/blob/master/data/enwik8/prep_enwik8.py)
+(8c) awd-lstm-lm_prepro.py - Preprocesses text in the method used by awd-lstm-lm (see https://github.com/salesforce/awd-lstm-lm/blob/master/data/enwik8/prep_enwik8.py)
 * Reads in the name YYY, where YYY = {training, training_valid, training_test, validation, testing}, which allows the python code to read in the output from (4), i.e. "split/[YYY]_allFiles.csv" (e.g. "split/testing_allFiles.csv")
 * Writes to CSV file in the "split/" directory, i.e. "split/[YYY]_allFiles_awdPrePro.csv" (e.g. "split/testing_allFiles_awdPrePro.csv")
 - Tokenizes words into individual characters
 
-(7d(a)) and (7d(b)) - See (6f(a)) or (6f(b))
+(8d(a)) and (8d(b)) - See (7f(a)) or (7f(b))
 
 
 # Data Analysis #
 
-(8) suprisalAnalysis.Rmd - Data analysis of surprisal
+(9) suprisalAnalysis.Rmd - Data analysis of surprisal
 * Reads in "umm_[ZZZ]_output_[YYY].csv" where YYY = {"training", "validation", "testing"} and ZZZ = {"kenlm", "lstm"}
 * Creates PDF of cleaning, visualization, and data analysis
 >\>\>\> knit to PDF
