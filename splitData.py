@@ -22,9 +22,9 @@ filenames = dict()
 
 # proportion of data in each set
 p_train = 0.3
-p_train_tr = 0.08
-p_train_va = 0.01
-p_train_te = 0.01
+p_train_tr = 0.09
+p_train_va = 0.005
+p_train_te = 0.005
 p_validate = 0.35
 p_test = 0.35
 

@@ -74,7 +74,7 @@ CSV file: {
 * Writes to a CSV files called "preprocessed/noPunct_allFiles.csv"
 >\>\>\> python removePunctuation.py
 
-(6) splitData.py - Splits data into 6 sets {training (~30\%) (from training, 3 further sets: training_train (~8\%), training_valid (~1\%), training_test (~1\%)), validation (~35\%), testing (~35\%)} by author
+(6) splitData.py - Splits data into 6 sets {training (~30\%) (from training, 3 further sets: training_train (~9\%), training_valid (~0.5\%), training_test (~0.5\%)), validation (~35\%), testing (~35\%)} by author
 * Reads in the "preprocessed/processed_allFiles.csv", created in (4)
 * Writes to 6 CSV files: "split/training_allFiles.csv", "split/training_train_allFiles.csv", "split/training_valid_allFiles.csv", "split/training_test_allFiles.csv", "split/validation_allFiles.csv", "split/testing_allFiles.csv"
 >\>\>\> python splitData.py
@@ -92,7 +92,7 @@ CSV file: {
 
 (7a) writeTrainingTxt_kenlm.py - If training the LM on your own data, extracts text in training CSV file to text file
 * Reads in "split/training_allFiles.csv" (output from 5)
-* Writes to text file "trainingTxt_allFiles.txt"
+* Writes to text file "train_kenlm.txt"
 >\>\>\> python writeTrainingTxt_kenlm.py
 
 - Extracts vector containing the relevant text in the training CSV file
@@ -100,7 +100,7 @@ CSV file: {
 - Then preprocess using kenlm_prepro
 >\>\>\> cd kenlm_prepro
 
->\>\>\> cat ../trainingTxt_allFiles.txt | ./prepro_post_dedupe_en.sh en | ./prepro_tokenize_en.sh en truecasemodels/truecase-model.en > ../trainingTxt_allFiles.txt
+>\>\>\> cat ../train_kenlm.txt | ./prepro_post_dedupe_en.sh en | ./prepro_tokenize_en.sh en truecasemodels/truecase-model.en > ../train_kenlm_clean.txt
 
 (7b) kenlm - Builds a 5-gram language model
 from https://kheafield.com/code/kenlm/
@@ -119,7 +119,7 @@ github: https://github.com/kpu/kenlm
 >\>\>\> make -j2
 
 (ii) Once kenlm is set up, use:
->\>\>\> bin/lmplz -o 5 -S 80\% -T /tmp <../trainingTxt_allFiles.txt >reddit.arpa
+>\>\>\> bin/lmplz -o 5 -S 80\% -T /tmp <../train_kenlm_clean.txt >reddit.arpa
 
 >\>\>\> bin/build_binary reddit.arpa reddit.binary
 
@@ -268,7 +268,7 @@ To download pretrained LM:
 (reddit) To train LSTM on reddit data:
 * Reads in directory "data/redditTrain/"
 * Writes to "REDDIT.pt", "REDDIT.pt.e25", "REDDIT.pt.e35"
->\>\>\> ../anaconda3/bin/python3 -u main.py --epochs 50 --nlayers 3 --emsize 400 --nhid 1840 --alpha 0 --beta 0 --dropoute 0 --dropouth 0.1 --dropouti 0.1 --dropout 0.4 --wdrop 0.2 --wdecay 1.2e-6 --bptt 200 --batch_size 128 --optimizer adam --lr 1e-3 --data data/redditTrain --save REDDIT.pt --when 25 35
+>\>\>\> ../anaconda3/bin/python3 -u main.py --epochs 50 --nlayers 3 --emsize 400 --nhid 1840 --alpha 0 --beta 0 --dropoute 0 --dropouth 0.1 --dropouti 0.1 --dropout 0.4 --wdrop 0.2 --wdecay 1.2e-6 --bptt 200 --batch_size 64 --optimizer adam --lr 1e-3 --data data/redditTrain --save REDDIT.pt --when 25 35
 
 NOTE: NEEDS TO BE ADJUSTED
 (enwik-8) To train LSTM on enwik-8 data:
